@@ -166,21 +166,21 @@ export const AlertsPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {alerts?.map((alert) => (
+                {alerts?.results?.map((alert) => (
                   <TableRow key={alert.id}>
                     <TableCell>{alert.id}</TableCell>
-                    <TableCell>{alert.type}</TableCell>
+                    <TableCell>{alert.detection_info?.type || alert.alert_type}</TableCell> {/* Use detection_info.type or fallback to alert_type */}
                     <TableCell>
                       <AlertLevelChip level={alert.level} />
                     </TableCell>
                     <TableCell>
-                      <AlertStatusChip status={alert.status} />
+                      <AlertStatusChip status={alert.alert_status} /> {/* Corrected: alert_status */}
                     </TableCell>
                     <TableCell>
-                      {new Date(alert.created_at).toLocaleString()}
+                      {new Date(alert.sent_at).toLocaleString()} {/* Corrected: sent_at */}
                     </TableCell>
                     <TableCell>
-                      {new Date(alert.updated_at).toLocaleString()}
+                      {alert.time_since_created} {/* Using time_since_created directly */}
                     </TableCell>
                     <TableCell>
                       <Box display="flex" gap={1}>

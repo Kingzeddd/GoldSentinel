@@ -150,7 +150,7 @@ export const ImagesPage = () => {
     queryFn: () => imageService.getImages()
   });
 
-  const filteredImages = images?.filter(image => {
+  const filteredImages = images?.results?.filter(image => {
     const matchesSearch = image.region.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRegion = regionFilter === 'all' || image.region === regionFilter;
     return matchesSearch && matchesRegion;
@@ -205,7 +205,7 @@ export const ImagesPage = () => {
 
       <Grid container spacing={3}>
         {filteredImages?.map((image) => (
-          <Grid item xs={12} sm={6} md={4} key={image.id}>
+          <Grid sx={{ xs: 12, sm: 6, md: 4 }} key={image.id}>
             <ImageCard
               image={image}
               onViewDetails={setSelectedImage}
@@ -227,7 +227,7 @@ export const ImagesPage = () => {
             </DialogTitle>
             <DialogContent>
               <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid item xs={12}>
+                <Grid sx={{ xs: 12 }}>
                   <Box
                     component="img"
                     src={selectedImage.full_url}
@@ -239,7 +239,7 @@ export const ImagesPage = () => {
                     }}
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Région
                   </Typography>
@@ -247,7 +247,7 @@ export const ImagesPage = () => {
                     {selectedImage.region}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Date de capture
                   </Typography>
@@ -255,7 +255,7 @@ export const ImagesPage = () => {
                     {new Date(selectedImage.capture_date).toLocaleString()}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Satellite
                   </Typography>
@@ -263,7 +263,7 @@ export const ImagesPage = () => {
                     {selectedImage.satellite}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Résolution
                   </Typography>
@@ -272,7 +272,7 @@ export const ImagesPage = () => {
                   </Typography>
                 </Grid>
                 {selectedImage.metadata && (
-                  <Grid item xs={12}>
+                  <Grid sx={{ xs: 12 }}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Métadonnées
                     </Typography>
