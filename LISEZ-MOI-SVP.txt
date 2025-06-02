@@ -1,0 +1,27 @@
+CREER DES USER PAR DEFAUT 
+
+1-python manage.py create_default_users
+
+il creer le responsable et l'agent de terrain 
+
+##########################################
+
+2-python manage.py create_default_users --force
+
+Résultat :
+
+🗑️ Supprime utilisateurs existants s'ils existent
+✅ Recrée les utilisateurs avec nouvelles données
+💡 Utile si vous voulez reset les mots de passe
+
+############################################
+
+3-python manage.py create_default_users --demo
+
+Résultat :
+
+✅ Crée les utilisateurs
+📸 Crée une image satellite d'exemple
+🎯 Crée une détection d'orpaillage
+🔍 Crée une investigation assignée à l'agent
+💡 Parfait pour démonstration complète !
