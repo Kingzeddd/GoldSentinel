@@ -169,6 +169,31 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+# Celery Configuration
+# Import crontab for scheduling
+from celery.schedules import crontab
+
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0') # Example, ensure your .env has this
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0') # Example
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE # Use Django's timezone
+
+CELERY_BEAT_SCHEDULE = {
+    'update-dashboard-statistics-daily': {
+        'task': 'update_dashboard_statistics',  # Name of the task in tasks.py
+        'schedule': crontab(minute=0, hour=0),  # Daily at midnight
+        # 'args': (arg1, arg2), # Optional arguments for the task
+    },
+    # Example of another existing task, if any (to show how to add to existing dict)
+    # 'periodic_debug_task': {
+    #    'task': 'config.celery.debug_task',
+    #    'schedule': timedelta(seconds=30),
+    # },
+}
+
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',

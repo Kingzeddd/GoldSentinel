@@ -6,12 +6,19 @@ def create_initial_users(apps, schema_editor):
     AuthorityModel = apps.get_model('account', 'AuthorityModel')
     UserAuthorityModel = apps.get_model('account', 'UserAuthorityModel')
 
-    # Créer les rôles s'ils n'existent pas déjà
-    roles = {
-        'Administrateur': AuthorityModel.objects.get_or_create(name='Administrateur')[0],
-        'Responsable Régional': AuthorityModel.objects.get_or_create(name='Responsable Régional')[0],
-        'Agent Terrain': AuthorityModel.objects.get_or_create(name='Agent Terrain')[0],
-    }
+    # Définition des rôles à partir des choix du modèle AuthorityModel
+    # Assurez-vous que ces choix correspondent à ceux dans AuthorityModel.AUTHORITY_CHOICES au moment de l'exécution de la migration
+    AUTHORITY_CHOICES_TUPLE = [
+        ('Administrateur', 'Administrateur'),
+        ('Responsable Régional', 'Responsable Régional'),
+        ('Agent Terrain', 'Agent Terrain'),
+        ('Agent Technique', 'Agent Technique'),
+        ('Agent Analyste', 'Agent Analyste'),
+    ]
+
+    roles = {}
+    for role_value, role_display_name in AUTHORITY_CHOICES_TUPLE:
+        roles[role_value] = AuthorityModel.objects.get_or_create(name=role_value)[0]
 
     # Données des utilisateurs à créer
     users_data = [
@@ -50,6 +57,24 @@ def create_initial_users(apps, schema_editor):
             'first_name': 'Pierre',
             'last_name': 'Durand',
             'authority': roles['Agent Terrain'],
+            'is_primary': True,
+        },
+        # Agent Analyste
+        {
+            'email': 'analyste@example.com',
+            'password': 'password123',
+            'first_name': 'Analyste',
+            'last_name': 'Expert',
+            'authority': roles['Agent Analyste'],
+            'is_primary': True,
+        },
+        # Agent Technique
+        {
+            'email': 'tech@example.com',
+            'password': 'password123',
+            'first_name': 'Technicien',
+            'last_name': 'Support',
+            'authority': roles['Agent Technique'],
             'is_primary': True,
         },
     ]

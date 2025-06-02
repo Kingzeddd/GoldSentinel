@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -7,10 +7,14 @@ from django.utils import timezone
 
 from alert.models.alert_model import AlertModel
 from api.serializers.alert_serializer import AlertSerializer
-from permissions.IsResponsableOrAgent import IsResponsableOrAgent
+# from permissions.IsResponsableOrAgent import IsResponsableOrAgent # Old permission
+from permissions.IsResponsableRegional import IsResponsableRegional # New permission
+from permissions.IsAdministrateur import IsAdministrateur # Added for potential broader access later if needed
+from permissions.IsAgentAnalyste import IsAgentAnalyste # Added for potential broader access later if needed
+
 
 class AlertViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsResponsableOrAgent]
+    permission_classes = [permissions.IsAuthenticated, IsResponsableRegional] # Updated
     """
     ViewSet pour les alertes d'orpaillage
     - GET /api/alerts/ - Liste alertes

@@ -1,9 +1,10 @@
 from django.db import models
 from django.contrib.gis.db import models as gis_models
-
+from django.utils.translation import gettext_lazy as _ # Import gettext_lazy
 
 from base.models.helpers.named_date_time_model import NamedDateTimeModel
-from base.models.helpers.date_time_model import DateTimeModel
+# DateTimeModel is not directly used by ReportModel if NamedDateTimeModel already inherits it.
+# from base.models.helpers.date_time_model import DateTimeModel
 
 from account.models.user_model import UserModel
 from region.models.region_model import RegionModel
@@ -15,18 +16,38 @@ class ReportModel(NamedDateTimeModel):
     Représente un rapport généré dans le système.
     Ce pourrait être un rapport PDF, CSV, ou un rapport de synthèse.
     """
-    REPORT_TYPES = [
-        ('SUMMARY', 'Summary Report'),
-        ('REGION_DETAIL', 'Regional Detail Report'),
-        ('ALERT_SUMMARY', 'Alerts Summary Report'),
-        ('DEFORESTATION_TREND', 'Deforestation Trend Report'),
-        ('WATER_QUALITY_TREND', 'Water Quality Trend Report'),
-    ]
+    class ReportTypeChoices(models.TextChoices):
+        SUMMARY = 'SUMMARY', _('Summary Report')
+        REGION_DETAIL = 'REGION_DETAIL', _('Regional Detail Report')
+        ALERT_SUMMARY = 'ALERT_SUMMARY', _('Alerts Summary Report')
+        DEFORESTATION_TREND = 'DEFORESTATION_TREND', _('Deforestation Trend Report')
+        WATER_QUALITY_TREND = 'WATER_QUALITY_TREND', _('Water Quality Trend Report')
+        # Add more types as needed
 
-    report_type = models.CharField(max_length=50, choices=REPORT_TYPES,
-                                   help_text="Type of report generated")
-    generated_by = models.ForeignKey(UserModel, on_delete=models.SET_NULL,
-                                     null=True, blank=True, related_name='generated_reports')
+    class StatusChoices(models.TextChoices):
+        PENDING = 'PENDING', _('Pending')
+        PROCESSING = 'PROCESSING', _('Processing')
+        COMPLETED = 'COMPLETED', _('Completed')
+        ERROR = 'ERROR', _('Error')
+
+    class FileFormatChoices(models.TextChoices):
+        CSV = 'CSV', _('CSV')
+        PDF = 'PDF', _('PDF')
+        # Add other formats if needed
+
+    report_type = models.CharField(
+        max_length=50,
+        choices=ReportTypeChoices.choices,
+        default=ReportTypeChoices.SUMMARY, # Or another sensible default
+        help_text=_("Type of report generated")
+    )
+    generated_by = models.ForeignKey(
+        UserModel,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='generated_reports'
+    )
     # Les rapports peuvent être liés à une région spécifique
     region = models.ForeignKey(RegionModel, on_delete=models.SET_NULL,
                                null=True, blank=True, related_name='reports')
@@ -42,8 +63,28 @@ class ReportModel(NamedDateTimeModel):
                                    help_text="External URL if report is hosted elsewhere")
 
     # Un champ pour un bref résumé du rapport
-    summary = models.TextField(blank=True,
-                               help_text="A brief summary or key findings of the report")
+    summary = models.TextField(
+        blank=True,
+        help_text=_("A brief summary or key findings of the report")
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=StatusChoices.choices,
+        default=StatusChoices.PENDING,
+        help_text=_("Generation status of the report")
+    )
+    file_format = models.CharField(
+        max_length=10,
+        choices=FileFormatChoices.choices,
+        default=FileFormatChoices.CSV,
+        help_text=_("File format of the generated report")
+    )
+    processing_error_message = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Details if an error occurred during report generation"
+    )
 
     class Meta:
         db_table = 'reports'
@@ -53,6 +94,7 @@ class ReportModel(NamedDateTimeModel):
         indexes = [
             models.Index(fields=['report_type', 'region']),
             models.Index(fields=['generated_by', 'created_at']),
+            models.Index(fields=['status', 'report_type']), # New index
         ]
 
     def __str__(self):

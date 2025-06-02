@@ -1,15 +1,16 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions # Updated import
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
-from rest_framework.permissions import IsAuthenticated
+# from rest_framework.permissions import IsAuthenticated # Old specific import
 from image.models.image_model import ImageModel
 from api.serializers.image_serializer import ImageSerializer
+from permissions.IsAgentTechnique import IsAgentTechnique # New permission
 
 
 class ImageViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAgentTechnique] # Updated
     """
     ViewSet pour les images satellites
     - GET /api/images/ - Liste images

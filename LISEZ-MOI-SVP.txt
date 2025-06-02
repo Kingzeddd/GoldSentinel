@@ -1,27 +1,63 @@
 CREER DES USER PAR DEFAUT 
 
-1-python manage.py create_default_users
+1- Création simple des utilisateurs par défaut :
+   python manage.py create_default_users
 
-il creer le responsable et l'agent de terrain 
+   Résultat : Crée les utilisateurs par défaut (Responsable, Agent de Terrain, etc.) et leurs autorités associées si non existants.
 
 ##########################################
 
-2-python manage.py create_default_users --force
+2- Forcer la recréation des utilisateurs (Réinitialisation) :
+   python manage.py create_default_users --force
 
-Résultat :
-
-🗑️ Supprime utilisateurs existants s'ils existent
-✅ Recrée les utilisateurs avec nouvelles données
-💡 Utile si vous voulez reset les mots de passe
+   Résultat :
+   🗑️ Supprime les utilisateurs non-superutilisateurs existants, leurs autorités, et les données de démonstration associées (investigations, détections, images de démo).
+   ✅ Recrée les utilisateurs et autorités par défaut.
+   💡 Utile pour réinitialiser les mots de passe et repartir sur une base de données utilisateurs propre pour la démo.
 
 ############################################
 
-3-python manage.py create_default_users --demo
+3- Créer utilisateurs et données de démonstration :
+   python manage.py create_default_users --demo
 
-Résultat :
+   Résultat :
+   ✅ Crée ou met à jour les utilisateurs et autorités par défaut.
+   🛰️  Assure l'existence de la région "BONDOUKOU".
+   📸 Crée une image satellite d'exemple pour Bondoukou.
+   🎯 Crée une détection d'orpaillage d'exemple.
+   🔍 Crée une investigation d'exemple, assignée à un agent de terrain.
+   💡 Idéal pour une démonstration complète du flux de travail du système !
 
-✅ Crée les utilisateurs
-📸 Crée une image satellite d'exemple
-🎯 Crée une détection d'orpaillage
-🔍 Crée une investigation assignée à l'agent
-💡 Parfait pour démonstration complète !
+############################################
+INGESTION DES NOUVELLES IMAGES SATELLITES
+############################################
+
+4- Scanner et traiter les nouvelles images GEE :
+   python manage.py ingest_new_gee_images
+
+   Résultat :
+   🛰️ Interroge Google Earth Engine pour les images satellites récentes.
+   ➕ Identifie les nouvelles images non encore traitées et les ajoute à la file d'attente pour traitement asynchrone (calcul des indices spectraux, etc.).
+   💡 Cette commande doit être exécutée périodiquement (par exemple, via une tâche cron système ou manuellement de temps en temps) pour que le système reste à jour avec les dernières images disponibles.
+
+############################################
+IMPORTANT : SERVICES D'ARRIÈRE-PLAN (CELERY)
+############################################
+
+Pour le fonctionnement optimal et complet du système, en particulier pour les opérations asynchrones et les tâches planifiées, les services Celery suivants doivent être actifs et opérationnels.
+
+Avant de lancer ces services, assurez-vous que votre broker de messages (par exemple, Redis ou RabbitMQ) est correctement configuré dans `config/settings.py` (via les variables d'environnement `CELERY_BROKER_URL` et `CELERY_RESULT_BACKEND`) et qu'il est en cours d'exécution.
+
+1. **Celery Worker (Exécuteur de Tâches)**:
+   Ce service exécute les tâches longues ou gourmandes en ressources en arrière-plan, telles que le traitement des images GEE, la génération de rapports, etc.
+   Pour le démarrer (depuis la racine du projet) :
+   `celery -A config worker -l info`
+
+2. **Celery Beat (Planificateur de Tâches)**:
+   Ce service est responsable du lancement des tâches périodiques, comme la mise à jour quotidienne des statistiques du tableau de bord.
+   Pour le démarrer (depuis la racine du projet) :
+   `celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler`
+
+   *(Note : L'utilisation de `django_celery_beat.schedulers:DatabaseScheduler` est recommandée si vous utilisez `django-celery-beat` pour stocker les planifications en base de données. Si vous avez une configuration de beat différente, ajustez la commande en conséquence.)*
+
+Le bon fonctionnement de ces deux services est crucial pour que toutes les fonctionnalités du système GoldSentinel soient disponibles et performantes.

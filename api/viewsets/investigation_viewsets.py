@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions # Added permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -11,19 +11,64 @@ from detection.models.investigation_model import InvestigationModel
 from detection.models.detection_feedback_model import DetectionFeedbackModel
 from api.serializers.investigation_serializer import InvestigationSerializer
 from permissions.CanManageInvestigations import CanManageInvestigations
+from permissions.IsAgentTerrain import IsAgentTerrain # Import IsAgentTerrain
 
 User = get_user_model()
 
 
 class InvestigationViewSet(viewsets.ModelViewSet):
-    permission_classes = [CanManageInvestigations]
+    # Default permission_classes, will be overridden by get_permissions
+    permission_classes = [permissions.IsAuthenticated, CanManageInvestigations]
     queryset = InvestigationModel.objects.all()
     serializer_class = InvestigationSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['status', 'result', 'assigned_to']
     ordering_fields = ['created_at', 'investigation_date']
     ordering = ['-created_at']
-    http_method_names = ['get', 'put', 'patch', 'head', 'options']
+    # Ensure 'put', 'patch' are in http_method_names if update/partial_update are to be used.
+    # 'post' for create, 'delete' for destroy. Default ModelViewSet includes all.
+    # The current list ['get', 'put', 'patch', 'head', 'options'] disables create and delete.
+    # Let's assume this is intentional or will be handled separately.
+    http_method_names = ['get', 'put', 'patch', 'head', 'options', 'delete'] # Added delete for completeness, assuming create is not for this view directly
+
+    def get_permissions(self):
+        if self.action == 'my_investigations':
+            self.permission_classes = [permissions.IsAuthenticated, IsAgentTerrain]
+        elif self.action == 'submit_result':
+            # Object-level check will be done in the action method
+            self.permission_classes = [permissions.IsAuthenticated]
+        elif self.action in ['update', 'partial_update']:
+            # Object-level check will be done in the overridden methods
+            self.permission_classes = [permissions.IsAuthenticated]
+        # Create, List, Retrieve, Assign, Available Agents, Pending Investigations use default
+        elif self.action in ['create', 'assign_investigation', 'available_agents', 'pending_investigations', 'list', 'retrieve', 'destroy']:
+             self.permission_classes = [permissions.IsAuthenticated, CanManageInvestigations]
+        else: # Default for any other custom actions not listed
+            self.permission_classes = [permissions.IsAuthenticated, CanManageInvestigations]
+        return super().get_permissions()
+
+    def update(self, request, *args, **kwargs):
+        investigation = self.get_object()
+        is_assigned_agent = (request.user == investigation.assigned_to)
+        # Check general permission using an instance of CanManageInvestigations
+        can_manage_globally = CanManageInvestigations().has_permission(request, self)
+
+        if not (is_assigned_agent or can_manage_globally):
+            self.permission_denied(
+                request, message="You can only update investigations assigned to you or if you have management permissions."
+            )
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        investigation = self.get_object()
+        is_assigned_agent = (request.user == investigation.assigned_to)
+        can_manage_globally = CanManageInvestigations().has_permission(request, self)
+
+        if not (is_assigned_agent or can_manage_globally):
+            self.permission_denied(
+                request, message="You can only update investigations assigned to you or if you have management permissions."
+            )
+        return super().partial_update(request, *args, **kwargs)
 
     @action(detail=False, methods=['get'], url_path='pending')
     def pending_investigations(self, request):
@@ -36,7 +81,7 @@ class InvestigationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='assigned-to-me')
     def my_investigations(self, request):
-        if not request.user.is_authenticated:
+        if not request.user.is_authenticated: # This check is redundant due to IsAuthenticated permission class
             return Response({'error': 'Authentification requise'},
                             status=status.HTTP_401_UNAUTHORIZED)
 
@@ -183,18 +228,28 @@ class InvestigationViewSet(viewsets.ModelViewSet):
         try:
             investigation = self.get_object()
 
+            # Permission Check
+            is_assigned_agent = (request.user == investigation.assigned_to)
+            can_manage_globally = CanManageInvestigations().has_permission(request, self)
+
+            if not (is_assigned_agent or can_manage_globally):
+                return Response({'error': 'You can only submit results for investigations assigned to you or if you have management permissions.'}, status=status.HTTP_403_FORBIDDEN)
+
+            if investigation.status not in [InvestigationModel.StatusChoices.ASSIGNED, InvestigationModel.StatusChoices.IN_PROGRESS]:
+                 return Response({'error': f'Cannot submit result for investigation with status {investigation.status}. Must be ASSIGNED or IN_PROGRESS.'}, status=status.HTTP_400_BAD_REQUEST)
+
             result = request.data.get('result')
             field_notes = request.data.get('field_notes', '')
             investigation_date = request.data.get('investigation_date')
 
-            if result not in ['CONFIRMED', 'FALSE_POSITIVE', 'NEEDS_MONITORING']:
+            if result not in [InvestigationModel.ResultChoices.CONFIRMED, InvestigationModel.ResultChoices.FALSE_POSITIVE, InvestigationModel.ResultChoices.NEEDS_MONITORING]:
                 return Response({
-                    'error': 'result doit être CONFIRMED, FALSE_POSITIVE ou NEEDS_MONITORING'
+                    'error': f"result doit être l'un de {', '.join([r[0] for r in InvestigationModel.ResultChoices.choices])}"
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             investigation.result = result
             investigation.field_notes = field_notes
-            investigation.status = 'COMPLETED'
+            investigation.status = InvestigationModel.StatusChoices.COMPLETED
 
             if investigation_date:
                 from datetime import datetime
@@ -254,7 +309,7 @@ class InvestigationViewSet(viewsets.ModelViewSet):
                 original_ndwi_score=detection.ndwi_anomaly_score or 0,
                 original_ndti_score=detection.ndti_anomaly_score or 0,
                 ground_truth_confirmed=(investigation.result == 'CONFIRMED'),
-                agent_confidence=2,
+                agent_confidence=2, # Placeholder, consider how to capture this
                 used_for_training=False
             )
             print(f"Feedback créé pour détection {detection.id}")

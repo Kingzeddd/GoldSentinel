@@ -18,6 +18,7 @@ from api.viewsets.event_log_viewsets import EventLogViewSet
 from api.viewsets.statistics_viewsets import StatisticsViewSet
 from api.viewsets.account_viewsets import AccountViewSet
 from api.viewsets.spectral_viewsets import SpectralViewSet
+from .viewsets.report_viewsets import ReportViewSet # Import ReportViewSet
 
 # Configuration du router
 router = DefaultRouter()
@@ -35,6 +36,7 @@ router.register(r'events', EventLogViewSet, basename='events')
 router.register(r'stats', StatisticsViewSet, basename='stats')
 router.register(r'account', AccountViewSet, basename='account')
 router.register(r'spectral', SpectralViewSet, basename='spectral')
+router.register(r'reports', ReportViewSet, basename='report') # Register ReportViewSet
 
 urlpatterns = [
     # Router principal

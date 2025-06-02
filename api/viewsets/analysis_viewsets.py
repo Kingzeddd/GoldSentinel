@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions # Added permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
@@ -11,7 +11,7 @@ from permissions.CanLauchAnalysis import CanLaunchAnalysis
 
 
 class AnalysisViewSet(viewsets.GenericViewSet):
-    permission_classes = [CanLaunchAnalysis]
+    permission_classes = [permissions.IsAuthenticated, CanLaunchAnalysis] # Updated
     """
     ViewSet pour les analyses d'orpaillage
     - Seul endpoint : POST /api/analysis/run/
