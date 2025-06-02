@@ -1,41 +1,39 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _ # Import gettext_lazy
 from base.models.helpers.named_date_time_model import NamedDateTimeModel
 
 
 class AlertModel(NamedDateTimeModel):
-    CRITICALITY_LEVELS = [
-        ('LOW', 'Faible'),
-        ('MEDIUM', 'Moyen'),
-        ('HIGH', 'Élevé'),
-        ('CRITICAL', 'Critique'),
-    ]
+    class CriticalityLevelChoices(models.TextChoices):
+        LOW = 'LOW', _('Faible')
+        MEDIUM = 'MEDIUM', _('Moyen')
+        HIGH = 'HIGH', _('Élevé')
+        CRITICAL = 'CRITICAL', _('Critique')
 
-    ALERT_TYPES = [
-        ('CLANDESTINE_SITE', 'Site clandestin détecté'),
-        ('SITE_EXPANSION', 'Expansion possible d\'un site existant'),
-        ('SUSPICIOUS_ACTIVITY', 'Activité suspecte détectée par IA'),
-        ('NEW_SITE', 'Nouveau site détecté près d\'une rivière'),
-        ('PROTECTED_ZONE_BREACH', 'Activité en zone protégée'),
-        ('WATER_POLLUTION', 'Pollution d\'eau détectée'),
-        ('DEFORESTATION_ALERT', 'Déforestation majeure détectée'),
-    ]
+    class AlertTypeChoices(models.TextChoices):
+        CLANDESTINE_SITE = 'CLANDESTINE_SITE', _('Site clandestin détecté')
+        SITE_EXPANSION = 'SITE_EXPANSION', _('Expansion possible d\'un site existant')
+        SUSPICIOUS_ACTIVITY = 'SUSPICIOUS_ACTIVITY', _('Activité suspecte détectée par IA')
+        NEW_SITE = 'NEW_SITE', _('Nouveau site détecté près d\'une rivière')
+        PROTECTED_ZONE_BREACH = 'PROTECTED_ZONE_BREACH', _('Activité en zone protégée')
+        WATER_POLLUTION = 'WATER_POLLUTION', _('Pollution d\'eau détectée')
+        DEFORESTATION_ALERT = 'DEFORESTATION_ALERT', _('Déforestation majeure détectée')
 
-    ALERT_STATUS = [
-        ('ACTIVE', 'Active'),
-        ('ACKNOWLEDGED', 'Accusée'),
-        ('RESOLVED', 'Résolue'),
-        ('FALSE_ALARM', 'Fausse alerte'),
-    ]
+    class AlertStatusChoices(models.TextChoices):
+        ACTIVE = 'ACTIVE', _('Active')
+        ACKNOWLEDGED = 'ACKNOWLEDGED', _('Accusée') # Corrected spelling from 'Accusée' if it was a typo, or keep as is
+        RESOLVED = 'RESOLVED', _('Résolue')
+        FALSE_ALARM = 'FALSE_ALARM', _('Fausse alerte')
 
     # Relations
     detection = models.ForeignKey('detection.DetectionModel', on_delete=models.CASCADE, related_name='alerts')
     region = models.ForeignKey('region.RegionModel', on_delete=models.CASCADE)
 
     # Détails alerte
-    level = models.CharField(max_length=20, choices=CRITICALITY_LEVELS)
-    alert_type = models.CharField(max_length=50, choices=ALERT_TYPES)
+    level = models.CharField(max_length=20, choices=CriticalityLevelChoices.choices, default=CriticalityLevelChoices.MEDIUM)
+    alert_type = models.CharField(max_length=50, choices=AlertTypeChoices.choices, default=AlertTypeChoices.SUSPICIOUS_ACTIVITY)
     message = models.TextField()
-    alert_status = models.CharField(max_length=20, choices=ALERT_STATUS, default='ACTIVE')
+    alert_status = models.CharField(max_length=20, choices=AlertStatusChoices.choices, default=AlertStatusChoices.ACTIVE)
 
     # Traitement
     sent_at = models.DateTimeField(auto_now_add=True)

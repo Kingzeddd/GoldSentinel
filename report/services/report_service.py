@@ -6,10 +6,13 @@ from typing import List, Dict, Any, Callable # Callable might not be used yet, b
 
 from django.db.models import Count, Q, Avg, Min, Max # Q, Avg, Min, Max added for potential use
 
-from detection.models import DetectionModel, InvestigationModel
-from alert.models import AlertModel
-from region.models import RegionModel
-from image.models import ImageModel # Added ImageModel
+# Corrected direct imports for detection models
+from detection.models.detection_model import DetectionModel
+from detection.models.investigation_model import InvestigationModel
+from alert.models.alert_model import AlertModel # Corrected direct import
+from region.models.region_model import RegionModel # Corrected direct import
+from image.models.image_model import ImageModel # Corrected direct import
+
 
 class ReportService:
 

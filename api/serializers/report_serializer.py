@@ -1,6 +1,6 @@
 # api/serializers/report_serializer.py
 from rest_framework import serializers
-from report.models import ReportModel # Assuming ReportModel is in report/models/__init__.py or directly accessible
+from report.models.report_model import ReportModel # Corrected direct import
 from account.models.user_model import UserModel # Corrected path based on previous fixes
 from region.models.region_model import RegionModel # Corrected path
 

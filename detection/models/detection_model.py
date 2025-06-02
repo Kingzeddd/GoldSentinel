@@ -1,23 +1,22 @@
 from django.db import models
 from django.contrib.gis.db import models as gis_models
+from django.utils.translation import gettext_lazy as _ # Import gettext_lazy
 from base.models.helpers.date_time_model import DateTimeModel
 from config.detection_settings import DetectionConfig # Import DetectionConfig
 
 
 class DetectionModel(DateTimeModel):
-    DETECTION_TYPES = [
-        ('MINING_SITE', 'Site minier'),
-        ('WATER_POLLUTION', 'Pollution eau'),
-        ('DEFORESTATION', 'Déforestation'),
-        ('SOIL_DISTURBANCE', 'Perturbation sol'),
-    ]
+    class DetectionTypeChoices(models.TextChoices):
+        MINING_SITE = 'MINING_SITE', _('Site minier')
+        WATER_POLLUTION = 'WATER_POLLUTION', _('Pollution eau')
+        DEFORESTATION = 'DEFORESTATION', _('Déforestation')
+        SOIL_DISTURBANCE = 'SOIL_DISTURBANCE', _('Perturbation sol')
 
-    VALIDATION_STATUS = [
-        ('DETECTED', 'Détecté'),
-        ('VALIDATED', 'Validé'),
-        ('FALSE_POSITIVE', 'Faux positif'),
-        ('CONFIRMED', 'Confirmé'),
-    ]
+    class ValidationStatusChoices(models.TextChoices):
+        DETECTED = 'DETECTED', _('Détecté')
+        VALIDATED = 'VALIDATED', _('Validé') # Analyst has reviewed and agrees it's likely correct
+        CONFIRMED = 'CONFIRMED', _('Confirmé') # Ground truth (e.g., field visit) confirms detection
+        FALSE_POSITIVE = 'FALSE_POSITIVE', _('Faux positif') # Confirmed not to be the target
 
     # Relations
     image = models.ForeignKey('image.ImageModel', on_delete=models.CASCADE, related_name='detections')
@@ -29,9 +28,9 @@ class DetectionModel(DateTimeModel):
     zone_geometry = gis_models.PolygonField(srid=4326, null=True, blank=True)
 
     # Détection
-    detection_type = models.CharField(max_length=30, choices=DETECTION_TYPES)
-    confidence_score = models.FloatField(help_text="Score de confiance 0.0-1.0")
-    area_hectares = models.FloatField(help_text="Surface estimée en hectares", default=0)
+    detection_type = models.CharField(max_length=30, choices=DetectionTypeChoices.choices, default=DetectionTypeChoices.MINING_SITE)
+    confidence_score = models.FloatField(help_text=_("Score de confiance 0.0-1.0"))
+    area_hectares = models.FloatField(help_text=_("Surface estimée en hectares"), default=0)
 
     # Scores des indices (base pour confidence_score)
     ndvi_anomaly_score = models.FloatField(null=True, blank=True)
@@ -39,7 +38,7 @@ class DetectionModel(DateTimeModel):
     ndti_anomaly_score = models.FloatField(null=True, blank=True)
 
     # Validation
-    validation_status = models.CharField(max_length=20, choices=VALIDATION_STATUS, default='DETECTED')
+    validation_status = models.CharField(max_length=20, choices=ValidationStatusChoices.choices, default=ValidationStatusChoices.DETECTED)
     validated_by = models.ForeignKey('account.UserModel', on_delete=models.SET_NULL, null=True, blank=True)
     validated_at = models.DateTimeField(null=True, blank=True)
 

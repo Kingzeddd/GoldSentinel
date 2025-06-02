@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend # For filtering
 
-from report.models import ReportModel # Assuming exposed in report/models/__init__.py
+from report.models.report_model import ReportModel # Corrected direct import
 from ..serializers.report_serializer import ReportSerializer # Relative import for serializer
 from report.tasks import generate_report_task # Assuming exposed in report/__init__.py or report/tasks.py is findable
 

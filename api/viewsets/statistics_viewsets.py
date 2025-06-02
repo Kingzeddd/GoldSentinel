@@ -12,6 +12,7 @@ from detection.models.investigation_model import InvestigationModel
 from detection.models.detection_feedback_model import DetectionFeedbackModel
 from image.models.image_model import ImageModel
 from api.serializers.dashboard_stats_serializer import DashboardStatsSerializer
+from report.models.dashboard_statistic_model import DashboardStatistic # Import DashboardStatistic
 
 from permissions.CanViewStats import CanViewStats
 class StatisticsViewSet(viewsets.GenericViewSet):
@@ -30,15 +31,33 @@ class StatisticsViewSet(viewsets.GenericViewSet):
     def dashboard_stats(self, request):
         """Statistiques complètes pour dashboard"""
         try:
-            # Période d'analyse
+            today = timezone.now().date()
+            latest_stats = DashboardStatistic.objects.filter(
+                region__isnull=True, # Global stats
+                date_calculated=today
+            ).order_by('-updated_at') # Should be unique per day, but just in case
+
+            precalculated_data = {}
+            for stat_entry in latest_stats:
+                precalculated_data[stat_entry.statistic_type] = stat_entry.value
+
+            # Période d'analyse (still used for some on-the-fly calculations)
             thirty_days_ago = timezone.now() - timedelta(days=30)
 
-            # Compteurs principaux
-            total_detections = DetectionModel.objects.count()
-            active_alerts = AlertModel.objects.filter(alert_status='ACTIVE').count()
-            pending_investigations = InvestigationModel.objects.filter(status='PENDING').count()
+            # Compteurs principaux - try precalculated first, then fallback
+            total_detections = precalculated_data.get(
+                DashboardStatistic.StatisticTypeChoices.TOTAL_DETECTIONS.value,
+                DetectionModel.objects.count() # Fallback
+            )
+            active_alerts = precalculated_data.get(
+                DashboardStatistic.StatisticTypeChoices.ACTIVE_ALERTS.value,
+                AlertModel.objects.filter(alert_status=AlertModel.AlertStatusChoices.ACTIVE).count() # Fallback
+            )
 
-            # Risque financier total
+            # These remain on-the-fly for now
+            pending_investigations = InvestigationModel.objects.filter(status=InvestigationModel.StatusChoices.PENDING).count()
+
+            # Risque financier total (remains on-the-fly)
             total_risk = FinancialRiskModel.objects.aggregate(
                 total=Sum('estimated_loss')
             )['total'] or 0
