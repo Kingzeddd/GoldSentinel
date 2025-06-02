@@ -48,10 +48,7 @@
 ## ⚠️ **POINTS D'ATTENTION**
 
 ### **Modèle TensorFlow**
-- Le modèle actuel attend des images (48x48x3)
-- Il faut soit :
-  - Adapter le modèle pour accepter 3 valeurs (NDVI, NDWI, NDTI)
-  - Ou créer des patches d'images 48x48 à partir des données spectrales
+- Le modèle `ghana_mining_detector.h5` attend des images 48x48x3. Ceci est maintenant géré : le `MiningDetectionService` prépare des patches d'indices spectraux (NDVI, NDWI, NDTI empilés en 3 canaux) dans ce format à partir des données GEE et les transmet au modèle.
 
 ### **Google Earth Engine**
 - Les assets de démonstration n'existent pas réellement
@@ -62,6 +59,18 @@
 - Calibrer les seuils de détection selon vos données réelles
 
 ## 🎯 **FONCTIONNALITÉS OPÉRATIONNELLES**
+
+### **Backend - Intelligence Artificielle**
+(Note: This section seems to be a duplicate or misplaced, merging with the top one if appropriate, or placing new config sections after it)
+
+### **Configuration Centralisée**
+Les paramètres clés pour les algorithmes de détection sont maintenant configurables dans `config/detection_settings.py`. Cela inclut les seuils pour les anomalies spectrales et le score du modèle TensorFlow, les poids pour les scores de confiance, et les seuils pour la criticité des alertes.
+
+### **Traitement Asynchrone (Celery)**
+Plusieurs tâches gourmandes en ressources sont maintenant exécutées de manière asynchrone avec Celery pour améliorer la réactivité et la robustesse du système :
+    - `process_gee_image_task`: Traitement des images GEE (calcul des indices spectraux).
+    - `generate_report_task`: Génération des fichiers de rapport (CSV).
+    - `update_dashboard_statistics_task`: Calcul et mise à jour périodique des statistiques du tableau de bord.
 
 ### **Immédiatement Utilisables**
 1. **Visualisation des indices** - Si vous avez des données NDVI/NDWI/NDTI
@@ -74,32 +83,27 @@
 2. **Seuils de détection** - Ajuster selon vos données terrain
 3. **Assets GEE** - Remplacer par de vrais identifiants d'images
 
-## 🚀 **PROCHAINES ÉTAPES RECOMMANDÉES**
+## 🚀 **PROCHAINES ÉTAPES RECOMMANDÉES** (et Commandes Utiles)
 
-1. **Tester avec vraies données**
+1. **Initialiser le système et créer des données de démonstration (inclut utilisateurs par défaut) :**
    ```bash
-   # Lancer une analyse complète
    python manage.py create_default_users --demo
    ```
+   *(Note: Cette commande crée des utilisateurs et des autorités par défaut. L'option `--demo` ajoute des exemples d'images, détections, et investigations.)*
 
-2. **Adapter le modèle TensorFlow**
-   ```python
-   # Créer un modèle simple pour 3 indices
-   model = tf.keras.Sequential([
-       tf.keras.layers.Dense(10, activation='relu', input_shape=(3,)),
-       tf.keras.layers.Dense(1, activation='sigmoid')
-   ])
+2. **Scanner et ingérer les nouvelles images GEE (à exécuter périodiquement) :**
+   ```bash
+   python manage.py ingest_new_gee_images
    ```
 
-3. **Calibrer les seuils**
-   ```python
-   # Dans mining_detection_service.py
-   DETECTION_THRESHOLDS = {
-       'ndvi_threshold': 0.3,  # À ajuster
-       'ndwi_threshold': 0.2,  # À ajuster  
-       'ndti_threshold': 0.4,  # À ajuster
-   }
-   ```
+3. **Lancer les workers Celery et Celery Beat (pour traitement asynchrone et tâches planifiées) :**
+   Voir instructions dans `LISEZ-MOI-SVP.txt` pour démarrer les services Celery.
+
+4. **Calibrer les Seuils et Poids de Détection :**
+   Les seuils de détection, les poids pour les scores de confiance, etc., sont maintenant centralisés dans `config/detection_settings.py`. Ajustez ces valeurs en fonction des performances observées avec vos données réelles.
+
+5. **Tester avec de Vraies Données GEE :**
+   Assurez-vous que votre configuration GEE (identifiants de projet, comptes de service) est correcte et que vous avez accès aux collections d'images Sentinel-2 pour les régions d'intérêt.
 
 ## 📊 **RÉSULTATS DES TESTS**
 
@@ -114,10 +118,15 @@
 ## 🎉 **CONCLUSION**
 
 **Votre système GoldSentinel dispose maintenant de :**
-- ✅ **Intelligence Artificielle** intégrée avec TensorFlow
-- ✅ **Visualisation spectrale** complète (cartes + graphiques)
-- ✅ **Interface utilisateur** moderne et intuitive
-- ✅ **API REST** pour toutes les fonctionnalités
-- ✅ **Architecture extensible** pour futures améliorations
+- ✅ **Intelligence Artificielle** intégrée avec TensorFlow, utilisant des patches spectraux 48x48x3.
+- ✅ **Visualisation spectrale** complète (cartes + graphiques).
+- ✅ **Interface utilisateur** moderne et intuitive.
+- ✅ **API REST** pour toutes les fonctionnalités.
+- ✅ **Configuration centralisée** des paramètres de détection.
+- ✅ **Traitement asynchrone** pour les tâches intensives (images GEE, rapports, statistiques).
+- ✅ **Génération de Rapports Asynchrones** (format CSV initial).
+- ✅ **Pré-calcul des Statistiques** pour le tableau de bord principal.
+- ✅ **Système de Rôles et Permissions** affiné pour l'accès API.
+- ✅ **Architecture extensible** pour futures améliorations.
 
-**Le système est prêt pour la production avec de vraies données !** 🚀
+**Le système est prêt pour la production avec de vraies données et une configuration adaptée !** 🚀
