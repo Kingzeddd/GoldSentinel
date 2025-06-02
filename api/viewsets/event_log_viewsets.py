@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions # Added permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -11,7 +11,7 @@ from report.models.event_log_model import EventLogModel
 
 from permissions.CanViewLogs import CanViewLogs
 class EventLogViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [CanViewLogs]
+    permission_classes = [permissions.IsAuthenticated, CanViewLogs] # Updated
     """
     ViewSet pour les logs d'événements système
     - GET /api/v1/events/ - Tous les événements

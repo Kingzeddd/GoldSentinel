@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions # Added permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -7,9 +7,11 @@ from django.utils import timezone
 from detection.models.detection_model import DetectionModel
 from api.serializers.detection_serializer import DetectionSerializer
 
-from permissions.IsResponsableRegional import IsResponsableRegional
+# from permissions.IsResponsableRegional import IsResponsableRegional # Old permission
+from permissions.IsAgentAnalyste import IsAgentAnalyste # New permission
+
 class DetectionViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsResponsableRegional]
+    permission_classes = [permissions.IsAuthenticated, IsAgentAnalyste] # Updated
     """
     ViewSet pour les détections d'orpaillage
     - GET /api/detections/ - Liste détections

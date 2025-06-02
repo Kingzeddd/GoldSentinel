@@ -1,16 +1,17 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions # Updated import
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+# from rest_framework.permissions import IsAuthenticated # Old specific import
 
 from image.models.image_model import ImageModel
 from gee.services.earth_engine_service import EarthEngineService
-from permissions.CanLauchAnalysis import CanLaunchAnalysis
+# from permissions.CanLauchAnalysis import CanLaunchAnalysis # Old permission
+from permissions.IsAgentAnalyste import IsAgentAnalyste # New permission
 
 
 class SpectralViewSet(viewsets.ViewSet):
     """ViewSet pour les cartes d'indices spectraux"""
-    permission_classes = [IsAuthenticated, CanLaunchAnalysis]
+    permission_classes = [permissions.IsAuthenticated, IsAgentAnalyste] # Updated
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

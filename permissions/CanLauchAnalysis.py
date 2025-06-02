@@ -8,7 +8,7 @@ class CanLaunchAnalysis(permissions.BasePermission):
             return False
         
         return request.user.user_authorities.filter(
-            authority__name__in=['Responsable Régional'],
+            authority__name__in=['Responsable Régional', 'Agent Technique'],
             status=True
         ).exists()
     

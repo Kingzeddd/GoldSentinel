@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions # Added permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -16,14 +16,14 @@ User = get_user_model()
 
 
 class InvestigationViewSet(viewsets.ModelViewSet):
-    permission_classes = [CanManageInvestigations]
+    permission_classes = [permissions.IsAuthenticated, CanManageInvestigations] # Updated
     queryset = InvestigationModel.objects.all()
     serializer_class = InvestigationSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['status', 'result', 'assigned_to']
     ordering_fields = ['created_at', 'investigation_date']
     ordering = ['-created_at']
-    http_method_names = ['get', 'put', 'patch', 'head', 'options']
+    http_method_names = ['get', 'put', 'patch', 'head', 'options'] # 'post' is implicitly allowed by ModelViewSet if not excluded
 
     @action(detail=False, methods=['get'], url_path='pending')
     def pending_investigations(self, request):
@@ -36,7 +36,7 @@ class InvestigationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='assigned-to-me')
     def my_investigations(self, request):
-        if not request.user.is_authenticated:
+        if not request.user.is_authenticated: # This check is redundant due to IsAuthenticated permission class
             return Response({'error': 'Authentification requise'},
                             status=status.HTTP_401_UNAUTHORIZED)
 
@@ -254,7 +254,7 @@ class InvestigationViewSet(viewsets.ModelViewSet):
                 original_ndwi_score=detection.ndwi_anomaly_score or 0,
                 original_ndti_score=detection.ndti_anomaly_score or 0,
                 ground_truth_confirmed=(investigation.result == 'CONFIRMED'),
-                agent_confidence=2,
+                agent_confidence=2, # Placeholder, consider how to capture this
                 used_for_training=False
             )
             print(f"Feedback créé pour détection {detection.id}")

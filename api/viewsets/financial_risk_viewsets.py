@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions # Added permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -6,10 +6,11 @@ from rest_framework import filters
 
 from alert.models.financial_risk_model import FinancialRiskModel
 from api.serializers.financial_risk_serializer import FinancialRiskSerializer
-from permissions.CanViewStats import CanViewStats
+# from permissions.CanViewStats import CanViewStats # Old permission
+from permissions.IsResponsableRegional import IsResponsableRegional # New permission
 
 class FinancialRiskViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [CanViewStats]
+    permission_classes = [permissions.IsAuthenticated, IsResponsableRegional] # Updated
     """
     ViewSet pour les risques financiers
     - GET /api/financial-risks/ - Liste risques

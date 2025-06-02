@@ -1,14 +1,15 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions # Added permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from permissions.IsResponsableRegional import IsResponsableRegional
+# from permissions.IsResponsableRegional import IsResponsableRegional # Old permission
+from permissions.IsAgentTerrain import IsAgentTerrain # New permission
 from detection.models.detection_feedback_model import DetectionFeedbackModel
 from api.serializers.detection_feedback_serializer import DetectionFeedbackSerializer
 
 
 class DetectionFeedbackViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [IsResponsableRegional]
+    permission_classes = [permissions.IsAuthenticated, IsAgentTerrain] # Updated
     """
     ViewSet pour les feedbacks de détection (lecture seule)
     - GET /api/v1/feedbacks/ - Liste feedbacks
@@ -54,7 +55,8 @@ class DetectionFeedbackViewSet(viewsets.ReadOnlyModelViewSet):
         confirmed = self.queryset.filter(ground_truth_confirmed=True).count()
         false_positives = self.queryset.filter(ground_truth_confirmed=False).count()
 
-        accuracy = (confirmed / total_feedbacks) * 100
+        accuracy = (confirmed / total_feedbacks) * 100 if total_feedbacks > 0 else 0
+
 
         # Analyse par niveau de confiance
         high_confidence = self.queryset.filter(original_confidence__gte=0.8)

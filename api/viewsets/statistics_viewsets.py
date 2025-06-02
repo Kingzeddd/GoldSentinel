@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions # Added permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from datetime import datetime, timedelta
@@ -16,7 +16,7 @@ from api.serializers.dashboard_stats_serializer import DashboardStatsSerializer
 from permissions.CanViewStats import CanViewStats
 class StatisticsViewSet(viewsets.GenericViewSet):
 
-    permission_classes = [CanViewStats]
+    permission_classes = [permissions.IsAuthenticated, CanViewStats] # Updated
     """
     ViewSet pour les statistiques système
     - GET /api/v1/stats/dashboard/ - Dashboard principal
@@ -234,8 +234,16 @@ class StatisticsViewSet(viewsets.GenericViewSet):
         if len(daily_data) < 2:
             return "Données insuffisantes"
 
-        recent_avg = sum(d['count'] for d in daily_data[-3:]) / 3
-        older_avg = sum(d['count'] for d in daily_data[:3]) / 3
+        # Ensure there are enough data points for averaging
+        recent_slice = daily_data[-3:]
+        older_slice = daily_data[:3]
+
+        if not recent_slice or not older_slice:
+            return "Données insuffisantes pour une analyse de tendance significative."
+
+        recent_avg = sum(d['count'] for d in recent_slice) / len(recent_slice)
+        older_avg = sum(d['count'] for d in older_slice) / len(older_slice)
+
 
         if recent_avg > older_avg * 1.2:
             return "Tendance croissante"
@@ -247,6 +255,6 @@ class StatisticsViewSet(viewsets.GenericViewSet):
     def _calculate_detection_coverage(self, our_total_loss):
         """Calcule % couverture par rapport estimation ministère"""
         ministry_estimate = 3_000_000_000_000  # 3000 milliards
-        if our_total_loss > 0:
+        if our_total_loss > 0 and ministry_estimate > 0: # ensure ministry_estimate is not zero
             return round((our_total_loss / ministry_estimate) * 100, 3)
         return 0

@@ -37,28 +37,82 @@ class MiningDetectionService:
             print(f"Erreur chargement modèle TensorFlow: {e}")
             return None
 
-    def _predict_with_tensorflow(self, indices_data: Dict) -> float:
-        """Utilise le modèle TensorFlow pour prédire la probabilité d'orpaillage"""
+    def _predict_with_tensorflow(self, latitude: float, longitude: float, image_asset_id: str) -> float:
+        """Utilise le modèle TensorFlow pour prédire la probabilité d'orpaillage à partir d'un patch spectral."""
         if not self.model:
+            print("Modèle TensorFlow non chargé. Skipping prediction.")
             return 0.0
 
         try:
-            # Préparation des données d'entrée
-            ndvi_mean = indices_data.get('ndvi_data', {}).get('mean', 0)
-            ndwi_mean = indices_data.get('ndwi_data', {}).get('mean', 0)
-            ndti_mean = indices_data.get('ndti_data', {}).get('mean', 0)
+            # 1. Obtenir le patch spectral de GEE
+            raw_patch_data = self.gee_service.get_spectral_patch(
+                point_coords=(longitude, latitude),
+                image_asset_id=image_asset_id,
+                patch_size_pixels=48, # Doit correspondre à l'attente du modèle
+                scale=10 # Résolution Sentinel-2 typique pour ces bandes
+            )
 
-            # Normalisation des indices (ajuster selon votre modèle)
-            features = np.array([[ndvi_mean, ndwi_mean, ndti_mean]])
+            if not raw_patch_data:
+                print("Erreur: Impossible de récupérer les données du patch spectral depuis GEE.")
+                return 0.0
 
-            # Prédiction
-            prediction = self.model.predict(features, verbose=0)
-            confidence = float(prediction[0][0]) if len(prediction[0]) > 0 else 0.0
+            if len(raw_patch_data) < 2: # Header + au moins une ligne de données (en fait, on en attend 48*48)
+                print(f"Erreur: Données de patch insuffisantes. Reçu {len(raw_patch_data)} lignes.")
+                return 0.0
+
+            # 2. Traiter les données brutes en un tableau NumPy (48, 48, 3)
+            header = raw_patch_data[0]
+            pixel_values_list = raw_patch_data[1:]
+
+            expected_pixels = 48 * 48
+            if len(pixel_values_list) != expected_pixels:
+                print(f"Erreur: Nombre de pixels incorrect. Attendu {expected_pixels}, reçu {len(pixel_values_list)}.")
+                # Tenter de voir si c'est un problème de géométrie/bordure
+                # Parfois getRegion peut retourner moins si le patch est au bord de l'image source
+                # Pour ce modèle, une taille fixe est cruciale.
+                return 0.0
+
+            # Trouver les indices des colonnes NDVI, NDWI, NDTI
+            try:
+                ndvi_idx = header.index('NDVI')
+                ndwi_idx = header.index('NDWI')
+                ndti_idx = header.index('NDTI')
+            except ValueError as e:
+                print(f"Erreur: Une ou plusieurs colonnes d'indice manquantes dans l'en-tête GEE: {header}. Détail: {e}")
+                return 0.0
+
+            # Extraire et remodeler chaque bande
+            # GEE peut retourner None pour les pixels masqués ou en dehors de la couverture image.
+            # Il faut gérer ces None, par exemple en les remplaçant par 0 ou une valeur spécifique.
+            # Le defaultValue=0 dans getRegion devrait gérer ça, mais vérifions.
+            def extract_band(idx):
+                band_flat = []
+                for p in pixel_values_list:
+                    val = p[idx]
+                    band_flat.append(float(val) if val is not None else 0.0) # Gérer les None potentiels
+                return np.array(band_flat, dtype=np.float32).reshape((48, 48))
+
+            ndvi_array = extract_band(ndvi_idx)
+            ndwi_array = extract_band(ndwi_idx)
+            ndti_array = extract_band(ndti_idx)
+
+            # Empiler les bandes pour former l'image (48, 48, 3)
+            spectral_patch_np = np.stack([ndvi_array, ndwi_array, ndti_array], axis=-1)
+
+            if spectral_patch_np.shape != (48, 48, 3):
+                print(f"Erreur: La forme du patch spectral final est incorrecte: {spectral_patch_np.shape}")
+                return 0.0
+
+            # 3. Préparer l'entrée du modèle et prédire
+            model_input = np.expand_dims(spectral_patch_np, axis=0)  # Ajoute la dimension du batch -> (1, 48, 48, 3)
+
+            prediction = self.model.predict(model_input, verbose=0)
+            confidence = float(prediction[0][0]) # Supposant que le modèle sort une seule valeur par item de batch
 
             return min(max(confidence, 0.0), 1.0)  # Clamp entre 0 et 1
 
         except Exception as e:
-            print(f"Erreur prédiction TensorFlow: {e}")
+            print(f"Erreur lors de la prédiction TensorFlow avec patch spectral: {e}")
             return 0.0
 
     def analyze_for_mining_activity(self, image_record: 'ImageModel') -> List[DetectionModel]:
@@ -102,8 +156,19 @@ class MiningDetectionService:
             # Détection anomalies
             anomaly_scores = self.gee_service.detect_anomalies(current_indices, reference_indices)
 
-            # Prédiction TensorFlow
-            tf_confidence = self._predict_with_tensorflow(current_indices)
+            # Prédiction TensorFlow en utilisant le centre de l'image pour le patch
+            # Idéalement, on itérerait sur des points d'intérêt ou des grilles.
+            # Pour l'instant, on utilise le centre de l'image comme point pour le patch.
+            tf_confidence = 0.0
+            if image_record.center_lat is not None and image_record.center_lon is not None and image_record.gee_asset_id:
+                tf_confidence = self._predict_with_tensorflow(
+                    latitude=image_record.center_lat,
+                    longitude=image_record.center_lon,
+                    image_asset_id=image_record.gee_asset_id
+                )
+            else:
+                print(f"Avertissement: Coordonnées du centre ou GEE asset ID manquants pour l'image {image_record.id}. Skipping TF prediction.")
+
 
             # Seuils de détection (à calibrer selon vos données)
             DETECTION_THRESHOLDS = {
