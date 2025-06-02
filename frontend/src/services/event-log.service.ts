@@ -1,5 +1,5 @@
 import axios from 'axios';
-import authService from './auth.service';
+import { authService } from './auth.service'; // Corrected import
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -25,7 +25,7 @@ export interface EventLog {
 
 class EventLogService {
   private getHeaders() {
-    const token = authService.getToken();
+    const token = authService.getAccessToken(); // Corrected method name
     return {
       Authorization: `Bearer ${token}`,
     };

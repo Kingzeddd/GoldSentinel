@@ -102,7 +102,7 @@ export const SpectralAnalysisPage: React.FC = () => {
             Sélectionner une Image
           </Typography>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={6}>
+            <Grid sx={{ xs: 12, md: 6 }}>
               <TextField
                 select
                 fullWidth
@@ -123,7 +123,7 @@ export const SpectralAnalysisPage: React.FC = () => {
                 ))}
               </TextField>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid sx={{ xs: 12, md: 6 }}>
               {selectedImageId && (
                 <Alert severity="info">
                   Image sélectionnée : {processedImages.find(img => img.id === selectedImageId)?.name}
@@ -165,7 +165,7 @@ export const SpectralAnalysisPage: React.FC = () => {
           <TabPanel value={activeTab} index={2}>
             {spectralIndices && (
               <Grid container spacing={3}>
-                <Grid item xs={12} md={4}>
+                <Grid sx={{ xs: 12, md: 4 }}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom color="#4CAF50">
@@ -187,7 +187,7 @@ export const SpectralAnalysisPage: React.FC = () => {
                   </Card>
                 </Grid>
 
-                <Grid item xs={12} md={4}>
+                <Grid sx={{ xs: 12, md: 4 }}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom color="#2196F3">
@@ -209,7 +209,7 @@ export const SpectralAnalysisPage: React.FC = () => {
                   </Card>
                 </Grid>
 
-                <Grid item xs={12} md={4}>
+                <Grid sx={{ xs: 12, md: 4 }}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom color="#FF9800">
@@ -231,7 +231,7 @@ export const SpectralAnalysisPage: React.FC = () => {
                   </Card>
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid sx={{ xs: 12 }}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>

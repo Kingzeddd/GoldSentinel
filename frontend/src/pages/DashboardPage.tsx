@@ -1,15 +1,19 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  PhotoIcon,
   ExclamationTriangleIcon,
   ChartBarIcon,
   DocumentTextIcon,
   UserGroupIcon,
   ClockIcon,
+  BanknotesIcon, // For financial risk
+  ShieldCheckIcon, // For accuracy rate
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
-import { imagesAPI, detectionsAPI, alertsAPI, investigationsAPI } from '../services/api';
+import { imagesAPI, detectionsAPI, alertsAPI, investigationsAPI } from '../services/api'; // Keep existing imports for now
+// Corrected import for DashboardStats type
+import statsService from '../services/stats.service';
+import type { DashboardStats } from '../services/stats.service';
 
 interface StatCard {
   title: string;
@@ -21,36 +25,64 @@ interface StatCard {
 export const DashboardPage: React.FC = () => {
   const { user, hasAuthority } = useAuth();
 
-  // Requêtes pour les données
-  const { data: imagesData } = useQuery({
-    queryKey: ['recent-images'],
-    queryFn: () => imagesAPI.getRecentImages(),
+  // Fetch dashboard statistics
+  const { data: dashboardStatsData, isLoading: isLoadingStats } = useQuery<DashboardStats, Error>({
+    queryKey: ['dashboardStats'],
+    queryFn: () => statsService.getDashboardStats(),
   });
 
-  const { data: detectionsData } = useQuery({
+  // Existing data queries - keep them for now, will remove if statsService provides all needed data
+  const { data: imagesData } = useQuery({
+    queryKey: ['recent-images'],
+    queryFn: () => imagesAPI.getRecentImages(), // This might be replaceable by dashboardStatsData
+  });
+
+  const { data: detectionsData } = useQuery({ // This might be replaceable
     queryKey: ['recent-detections'],
     queryFn: () => detectionsAPI.getRecentDetections(),
   });
 
-  const { data: alertsData } = useQuery({
+  const { data: alertsData } = useQuery({ // This might be replaceable
     queryKey: ['critical-alerts'],
     queryFn: () => alertsAPI.getCriticalAlerts(),
   });
 
-  const { data: investigationsData } = useQuery({
+  const { data: investigationsData } = useQuery({ // This might be replaceable
     queryKey: ['recent-investigations'],
     queryFn: () => investigationsAPI.getRecentInvestigations(),
   });
 
   // Statistiques en fonction du rôle
   const getStats = (): StatCard[] => {
-    const stats: StatCard[] = [];
+    if (isLoadingStats || !dashboardStatsData) {
+      // Return a loading state or empty array if data is not yet available
+      return [];
+    }
 
-    // Statistiques communes à tous les rôles
+    const stats: StatCard[] = [];
+    const {
+      total_detections,
+      active_alerts,
+      pending_investigations,
+      total_financial_risk,
+      // analysis_period_days, // Not directly used in cards
+      // last_analysis_date, // Not directly used in cards
+      accuracy_rate,
+      // high_confidence_detections, // Could be a new card
+      // detections_trend, // For charts, not cards
+      // alerts_by_level, // Could be detailed view, not simple card
+      // affected_zones, // For map or detailed view
+    } = dashboardStatsData;
+
+    // Common stats for all roles that have access to the dashboard
+    // Assuming 'Images analysées' can be derived or is a separate metric.
+    // For now, let's use a placeholder or remove if not in dashboardStatsData.
+    // If total_detections implies images were analyzed, we can use it.
+    // Let's assume total_detections is a good general metric.
     stats.push({
-      title: 'Images analysées',
-      value: imagesData?.data?.length || 0,
-      icon: PhotoIcon,
+      title: 'Total Détections',
+      value: total_detections,
+      icon: ChartBarIcon, // Using ChartBarIcon for detections
       color: 'bg-night-blue',
     });
 
@@ -58,43 +90,60 @@ export const DashboardPage: React.FC = () => {
     if (hasAuthority('Responsable Régional') || hasAuthority('Administrateur')) {
       stats.push(
         {
-          title: 'Détections',
-          value: detectionsData?.data?.length || 0,
-          icon: ChartBarIcon,
-          color: 'bg-gold',
-        },
-        {
-          title: 'Alertes critiques',
-          value: alertsData?.data?.length || 0,
+          title: 'Alertes Actives',
+          value: active_alerts,
           icon: ExclamationTriangleIcon,
           color: 'bg-alert-red',
         },
         {
-          title: 'Investigations en cours',
-          value: investigationsData?.data?.length || 0,
+          title: 'Investigations en Attente',
+          value: pending_investigations,
           icon: DocumentTextIcon,
           color: 'bg-forest-green',
+        },
+        {
+          title: 'Risque Financier Total (FCFA)',
+          value: total_financial_risk, // Assuming this is a numerical value
+          icon: BanknotesIcon,
+          color: 'bg-yellow-500', // Example color
+        },
+        {
+          title: 'Taux de Précision',
+          value: parseFloat((accuracy_rate * 100).toFixed(2)), // Format as percentage
+          icon: ShieldCheckIcon,
+          color: 'bg-green-500', // Example color
         }
       );
     }
 
     // Statistiques pour Agent Terrain
+    // The new stats endpoint does not seem to provide agent-specific "Mes investigations"
+    // or "Détections en attente" (pending for *that* agent).
+    // We might need to keep investigationsData and detectionsData for these specific cards,
+    // or adjust the backend to provide this level of detail in dashboardStats.
     if (hasAuthority('Agent Terrain')) {
       stats.push(
         {
-          title: 'Mes investigations',
-          value: investigationsData?.data?.filter(inv => inv.assigned_to === user?.id).length || 0,
-          icon: UserGroupIcon,
+          title: 'Mes investigations', // This specific stat might not be in dashboardStatsData
+          value: investigationsData?.data?.filter((inv: any) => inv.assigned_to === user?.id).length || 0,
+          icon: UserGroupIcon, // Changed from UsersIcon to UserGroupIcon as per original
           color: 'bg-forest-green',
         },
         {
-          title: 'Détections en attente',
-          value: detectionsData?.data?.filter(det => det.status === 'pending').length || 0,
+          title: 'Détections en attente', // This specific stat might not be in dashboardStatsData
+          value: detectionsData?.data?.filter((det: any) => det.status === 'pending').length || 0,
           icon: ClockIcon,
           color: 'bg-gold',
         }
       );
     }
+    // Add other stats from dashboardStatsData as needed, for example:
+    // stats.push({
+    //   title: 'Images Analysées', (If available, or map from another source)
+    //   value: imagesData?.data?.length || 0, // Placeholder, needs to be confirmed
+    //   icon: PhotoIcon,
+    //   color: 'bg-sky-blue',
+    // });
 
     return stats;
   };

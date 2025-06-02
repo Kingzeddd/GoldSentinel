@@ -98,7 +98,7 @@ export const StatsPage = () => {
       </Box>
 
       <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid sx={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title="Détections Totales"
             value={dashboardStats?.total_detections || 0}
@@ -106,7 +106,7 @@ export const StatsPage = () => {
             color="#2196f3"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid sx={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title="Alertes Actives"
             value={dashboardStats?.active_alerts || 0}
@@ -114,7 +114,7 @@ export const StatsPage = () => {
             color="#f44336"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid sx={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title="Investigations en Attente"
             value={dashboardStats?.pending_investigations || 0}
@@ -122,7 +122,7 @@ export const StatsPage = () => {
             color="#ff9800"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid sx={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
             title="Risque Financier"
             value={`${(dashboardStats?.total_financial_risk || 0).toLocaleString()} FCFA`}
@@ -133,7 +133,7 @@ export const StatsPage = () => {
       </Grid>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
+        <Grid sx={{ xs: 12, md: 8 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" mb={2}>
@@ -159,7 +159,7 @@ export const StatsPage = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid sx={{ xs: 12, md: 4 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" mb={2}>
@@ -183,7 +183,7 @@ export const StatsPage = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid sx={{ xs: 12 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" mb={2}>
