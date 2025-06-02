@@ -70,7 +70,7 @@ export const authAPI = {
   login: (credentials: any) => axios.post(`${BACKEND_BASE_URL}/api/v1/auth/token/`, { email: credentials.username, password: credentials.password }), // Correction ici, utilisez axios direct avec l'URL complète
   refreshToken: (token: { refresh: string }) => api.post('/auth/token/refresh/', token),
   getProfile: () => api.get('/account/profile/'),
-  getRecentImages: () => api.get('/images/'),
+  // Removed incorrect getRecentImages from authAPI
 };
 
 // API Images
@@ -88,6 +88,7 @@ export const imagesAPI = {
     }
   }),
   delete: (id: number) => api.delete(`/images/${id}/`),
+  getRecentImages: () => api.get('/images/recent/'), // Added correct getRecentImages
 };
 
 // API Detections

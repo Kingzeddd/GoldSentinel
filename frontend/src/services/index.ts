@@ -1,4 +1,4 @@
-export { default as authService } from './auth.service';
+export { authService } from './auth.service'; // Corrected: removed default
 export { default as detectionService } from './detection.service';
 export { default as alertService } from './alert.service';
 export { default as investigationService } from './investigation.service';
@@ -11,7 +11,7 @@ export { default as profileService } from './profile.service';
 export { default as analysisService } from './analysis.service';
 
 // Types exports
-export type { LoginCredentials, AuthResponse } from './auth.service';
+export type { User, LoginResponse } from './auth.service'; // Corrected: User, LoginResponse
 export type { Detection } from './detection.service';
 export type { Alert } from './alert.service';
 export type { Investigation, Agent } from './investigation.service';

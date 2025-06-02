@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { detectionService, Detection } from '../services';
+import { detectionService } from '../services';
+import type { Detection } from '../services'; // Corrected import
 
 export const useDetections = (params?: any) => {
   const [detections, setDetections] = useState<Detection[]>([]);
@@ -43,4 +44,6 @@ export const useDetections = (params?: any) => {
     loading,
     error,
     totalCount,
- 
+    validateDetection, // Added missing function
+  }; // Added missing closing brace
+}; // Added missing closing brace for the function

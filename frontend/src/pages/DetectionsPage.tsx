@@ -61,7 +61,7 @@ const DetectionCard = ({ detection, onViewDetails }: { detection: any; onViewDet
     <CardContent>
       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
         <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-          {detection.type}
+          {detection.detection_type} {/* Corrected: detection_type */}
         </Typography>
         <Chip
           label={`${(detection.confidence_score * 100).toFixed(1)}%`}
@@ -73,7 +73,7 @@ const DetectionCard = ({ detection, onViewDetails }: { detection: any; onViewDet
       <Box display="flex" alignItems="center" gap={1} mb={1}>
         <LocationOn fontSize="small" color="action" />
         <Typography variant="body2" color="text.secondary">
-          {detection.region}
+          {detection.region_name} {/* Corrected: region_name */}
         </Typography>
       </Box>
 
@@ -147,10 +147,10 @@ export const DetectionsPage = () => {
     enabled: !!selectedDetection?.region_id && showSpectralData,
   });
 
-  const filteredDetections = detections?.filter(detection => {
-    const matchesSearch = detection.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         detection.region.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === 'all' || detection.type === typeFilter;
+  const filteredDetections = detections?.results?.filter(detection => {
+    const matchesSearch = (detection.detection_type || '').toLowerCase().includes(searchTerm.toLowerCase()) || // Corrected: detection_type
+                         (detection.region_name || '').toLowerCase().includes(searchTerm.toLowerCase()); // Corrected: region_name
+    const matchesType = typeFilter === 'all' || detection.detection_type === typeFilter; // Corrected: detection_type
     return matchesSearch && matchesType;
   });
 
@@ -202,7 +202,7 @@ export const DetectionsPage = () => {
 
       <Grid container spacing={3}>
         {filteredDetections?.map((detection) => (
-          <Grid item xs={12} sm={6} md={4} key={detection.id}>
+          <Grid sx={{ xs: 12, sm: 6, md: 4 }} key={detection.id}>
             <DetectionCard
               detection={detection}
               onViewDetails={setSelectedDetection}
@@ -233,15 +233,15 @@ export const DetectionsPage = () => {
             </DialogTitle>
             <DialogContent>
               <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Type
                   </Typography>
                   <Typography variant="body1" gutterBottom>
-                    {selectedDetection.type}
+                    {selectedDetection.detection_type} {/* Corrected: detection_type */}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Score de confiance
                   </Typography>
@@ -249,15 +249,15 @@ export const DetectionsPage = () => {
                     {(selectedDetection.confidence_score * 100).toFixed(1)}%
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Région
                   </Typography>
                   <Typography variant="body1" gutterBottom>
-                    {selectedDetection.region}
+                    {selectedDetection.region_name} {/* Corrected: region_name */}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Date de détection
                   </Typography>
@@ -265,7 +265,7 @@ export const DetectionsPage = () => {
                     {new Date(selectedDetection.detection_date).toLocaleString()}
                   </Typography>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid sx={{ xs: 12 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Surface
                   </Typography>
@@ -274,7 +274,7 @@ export const DetectionsPage = () => {
                   </Typography>
                 </Grid>
                 {selectedDetection.image_url && (
-                  <Grid item xs={12}>
+                  <Grid sx={{ xs: 12 }}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Image satellite
                     </Typography>
@@ -294,14 +294,14 @@ export const DetectionsPage = () => {
                 {/* Données spectrales */}
                 {showSpectralData && (
                   <>
-                    <Grid item xs={12}>
+                    <Grid sx={{ xs: 12 }}>
                       <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
                         Analyse Spectrale
                       </Typography>
                     </Grid>
 
                     {/* Cartes spectrales */}
-                    <Grid item xs={12}>
+                    <Grid sx={{ xs: 12 }}>
                       <SpectralMap
                         imageId={selectedDetection.image_id}
                         spectralData={spectralMaps?.spectral_maps}
@@ -311,7 +311,7 @@ export const DetectionsPage = () => {
                     </Grid>
 
                     {/* Graphiques et données */}
-                    <Grid item xs={12}>
+                    <Grid sx={{ xs: 12 }}>
                       <SpectralCharts
                         currentData={spectralIndices}
                         trendsData={spectralTrends?.trends}
@@ -321,14 +321,14 @@ export const DetectionsPage = () => {
 
                     {/* Indices détaillés */}
                     {spectralIndices && (
-                      <Grid item xs={12}>
+                      <Grid sx={{ xs: 12 }}>
                         <Card variant="outlined">
                           <CardContent>
                             <Typography variant="h6" gutterBottom>
                               Valeurs des Indices
                             </Typography>
                             <Grid container spacing={2}>
-                              <Grid item xs={4}>
+                              <Grid sx={{ xs: 4 }}>
                                 <Typography variant="body2" color="text.secondary">
                                   NDVI (Végétation)
                                 </Typography>
@@ -339,7 +339,7 @@ export const DetectionsPage = () => {
                                   {spectralService.interpretIndex(spectralIndices.ndvi_mean || 0, 'ndvi').description}
                                 </Typography>
                               </Grid>
-                              <Grid item xs={4}>
+                              <Grid sx={{ xs: 4 }}>
                                 <Typography variant="body2" color="text.secondary">
                                   NDWI (Eau)
                                 </Typography>
@@ -350,7 +350,7 @@ export const DetectionsPage = () => {
                                   {spectralService.interpretIndex(spectralIndices.ndwi_mean || 0, 'ndwi').description}
                                 </Typography>
                               </Grid>
-                              <Grid item xs={4}>
+                              <Grid sx={{ xs: 4 }}>
                                 <Typography variant="body2" color="text.secondary">
                                   NDTI (Sol)
                                 </Typography>

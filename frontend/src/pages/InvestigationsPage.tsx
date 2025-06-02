@@ -152,7 +152,7 @@ export const InvestigationsPage = () => {
     }
   };
 
-  const filteredInvestigations = investigations?.filter(investigation => {
+  const filteredInvestigations = investigations?.results?.filter(investigation => {
     if (filters.status !== 'all' && investigation.status !== filters.status) return false;
     if (filters.agent !== 'all' && !investigation.agents.some((a: any) => a.id === filters.agent)) return false;
     if (filters.region !== 'all' && investigation.region !== filters.region) return false;
@@ -184,7 +184,7 @@ export const InvestigationsPage = () => {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={3}>
+            <Grid sx={{ xs: 12, sm: 3 }}>
               <TextField
                 select
                 fullWidth
@@ -199,7 +199,7 @@ export const InvestigationsPage = () => {
                 <MenuItem value="cancelled">Annulée</MenuItem>
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid sx={{ xs: 12, sm: 3 }}>
               <TextField
                 select
                 fullWidth
@@ -208,7 +208,7 @@ export const InvestigationsPage = () => {
                 onChange={(e) => setFilters({ ...filters, agent: e.target.value })}
               >
                 <MenuItem value="all">Tous les agents</MenuItem>
-                {investigations?.flatMap((i: any) => i.agents)
+                {investigations?.results?.flatMap((i: any) => i.agents)
                   .filter((a: any, index: number, self: any[]) => 
                     index === self.findIndex((t: any) => t.id === a.id)
                   )
@@ -219,7 +219,7 @@ export const InvestigationsPage = () => {
                   ))}
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid sx={{ xs: 12, sm: 3 }}>
               <TextField
                 select
                 fullWidth
@@ -228,7 +228,7 @@ export const InvestigationsPage = () => {
                 onChange={(e) => setFilters({ ...filters, region: e.target.value })}
               >
                 <MenuItem value="all">Toutes les régions</MenuItem>
-                {investigations?.map((i: any) => i.region)
+                {investigations?.results?.map((i: any) => i.region)
                   .filter((r: string, index: number, self: string[]) => 
                     index === self.indexOf(r)
                   )
@@ -399,7 +399,7 @@ export const InvestigationsPage = () => {
             </DialogTitle>
             <DialogContent>
               <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Type
                   </Typography>
@@ -407,7 +407,7 @@ export const InvestigationsPage = () => {
                     {selectedInvestigation.type}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Statut
                   </Typography>
@@ -415,7 +415,7 @@ export const InvestigationsPage = () => {
                     <InvestigationStatusChip status={selectedInvestigation.status} />
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Région
                   </Typography>
@@ -423,7 +423,7 @@ export const InvestigationsPage = () => {
                     {selectedInvestigation.region}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ xs: 12, md: 6 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Date de création
                   </Typography>
@@ -431,7 +431,7 @@ export const InvestigationsPage = () => {
                     {new Date(selectedInvestigation.created_at).toLocaleString()}
                   </Typography>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid sx={{ xs: 12 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Agents assignés
                   </Typography>
@@ -447,7 +447,7 @@ export const InvestigationsPage = () => {
                   </Box>
                 </Grid>
                 {selectedInvestigation.comments && (
-                  <Grid item xs={12}>
+                  <Grid sx={{ xs: 12 }}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Commentaires
                     </Typography>

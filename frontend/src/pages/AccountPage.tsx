@@ -38,12 +38,14 @@ export const AccountPage: React.FC = () => {
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: () => accountAPI.getProfile(),
-    onSuccess: (data) => {
-      setFormData({
-        full_name: data.data.full_name,
-        job_title: data.data.job_title,
-        institution: data.data.institution,
-      });
+    onSuccess: (data) => { // Assuming data is UserProfile directly
+      if (data) { // Check if data is not undefined
+        setFormData({
+          full_name: data.full_name || '',
+          job_title: data.job_title || '',
+          institution: data.institution || '',
+        });
+      }
     },
   });
 
@@ -145,19 +147,19 @@ export const AccountPage: React.FC = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Nom complet
                       </label>
-                      <p className="text-gray-900">{profile?.data.full_name}</p>
+                      <p className="text-gray-900">{profile?.full_name}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Poste
                       </label>
-                      <p className="text-gray-900">{profile?.data.job_title}</p>
+                      <p className="text-gray-900">{profile?.job_title}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Institution
                       </label>
-                      <p className="text-gray-900">{profile?.data.institution}</p>
+                      <p className="text-gray-900">{profile?.institution}</p>
                     </div>
                     <button
                       onClick={() => setIsEditing(true)}
@@ -178,32 +180,32 @@ export const AccountPage: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Nom d'utilisateur
                     </label>
-                    <p className="text-gray-900">{profile?.data.username}</p>
+                    <p className="text-gray-900">{profile?.username}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Email
                     </label>
-                    <p className="text-gray-900">{profile?.data.email}</p>
+                    <p className="text-gray-900">{profile?.email}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Rôle
                     </label>
-                    <p className="text-gray-900">{profile?.data.primary_authority}</p>
+                    <p className="text-gray-900">{profile?.primary_authority}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Région assignée
                     </label>
-                    <p className="text-gray-900">{profile?.data.authorized_region}</p>
+                    <p className="text-gray-900">{profile?.authorized_region}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Dernière connexion
                     </label>
                     <p className="text-gray-900">
-                      {new Date(profile?.data.last_login).toLocaleString()}
+                      {profile?.last_login ? new Date(profile.last_login).toLocaleString() : 'N/A'}
                     </p>
                   </div>
                 </div>

@@ -118,7 +118,7 @@ export const SpectralCharts: React.FC<SpectralChartsProps> = ({
     <Grid container spacing={3}>
       {/* Valeurs actuelles */}
       {currentData && (
-        <Grid item xs={12} md={6}>
+        <Grid sx={{ xs: 12, md: 6 }}> {/* Reverted component="div", trying sx prop for xs/md */}
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -149,7 +149,7 @@ export const SpectralCharts: React.FC<SpectralChartsProps> = ({
                   const status = getIndexStatus(mean, index);
                   
                   return (
-                    <Grid item xs={12} key={index}>
+                    <Grid sx={{ xs: 12 }} key={index}> {/* Trying sx prop for xs */}
                       <Box display="flex" justifyContent="space-between" alignItems="center" p={1}>
                         <Typography variant="body2" sx={{ color: getIndexColor(index), fontWeight: 'bold' }}>
                           {index.toUpperCase()}
@@ -176,7 +176,7 @@ export const SpectralCharts: React.FC<SpectralChartsProps> = ({
 
       {/* Évolution temporelle */}
       {trendsData && trendsData.length > 0 && (
-        <Grid item xs={12} md={6}>
+        <Grid sx={{ xs: 12, md: 6 }}> {/* Trying sx prop for xs/md */}
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
