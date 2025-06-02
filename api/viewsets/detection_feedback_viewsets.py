@@ -1,15 +1,15 @@
-from rest_framework import viewsets, permissions # Added permissions
+from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-# from permissions.IsResponsableRegional import IsResponsableRegional # Old permission
-from permissions.IsAgentTerrain import IsAgentTerrain # New permission
+# from permissions.IsAgentTerrain import IsAgentTerrain # Old permission, to be removed
+from permissions.IsAgentAnalyste import IsAgentAnalyste # New permission
 from detection.models.detection_feedback_model import DetectionFeedbackModel
 from api.serializers.detection_feedback_serializer import DetectionFeedbackSerializer
 
 
 class DetectionFeedbackViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [permissions.IsAuthenticated, IsAgentTerrain] # Updated
+    permission_classes = [permissions.IsAuthenticated, IsAgentAnalyste] # Updated
     """
     ViewSet pour les feedbacks de détection (lecture seule)
     - GET /api/v1/feedbacks/ - Liste feedbacks

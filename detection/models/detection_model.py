@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.gis.db import models as gis_models
 from base.models.helpers.date_time_model import DateTimeModel
+from config.detection_settings import DetectionConfig # Import DetectionConfig
 
 
 class DetectionModel(DateTimeModel):
@@ -59,17 +60,24 @@ class DetectionModel(DateTimeModel):
         return f"{self.detection_type} - Score: {self.confidence_score:.2f} - {self.detection_date.strftime('%Y-%m-%d')}"
 
     def calculate_confidence_score(self):
-        """Calcul du score de confiance basé sur les indices spectraux"""
-        if not all([self.ndvi_anomaly_score, self.ndwi_anomaly_score, self.ndti_anomaly_score]):
-            return 0.0
-
-        # Pondération proposée dans votre analyse initiale
-        weights = {'ndvi': 0.4, 'ndwi': 0.3, 'ndti': 0.3}
-
+        """
+        Calcul du score de confiance basé sur les indices spectraux d'anomalie.
+        Cette méthode calcule ce qui est parfois référé comme 'anomaly_confidence'.
+        Le score final de la détection peut ensuite combiner cela avec d'autres sources (ex: TF).
+        """
+        # Utiliser les poids depuis DetectionConfig
+        # Assurer que les scores None sont traités comme 0.0 dans le calcul
         score = (
-                weights['ndvi'] * self.ndvi_anomaly_score +
-                weights['ndwi'] * self.ndwi_anomaly_score +
-                weights['ndti'] * self.ndti_anomaly_score
+            DetectionConfig.ANOMALY_CONFIDENCE_WEIGHT_NDVI * (self.ndvi_anomaly_score or 0.0) +
+            DetectionConfig.ANOMALY_CONFIDENCE_WEIGHT_NDWI * (self.ndwi_anomaly_score or 0.0) +
+            DetectionConfig.ANOMALY_CONFIDENCE_WEIGHT_NDTI * (self.ndti_anomaly_score or 0.0)
         )
+
+        # La vérification `if not all(...)` n'est plus strictement nécessaire si on traite les None en 0.0,
+        # car si tous sont None (ou 0.0), le score sera 0.0.
+        # Si au moins un score est non-None et positif, le score sera > 0.
+        # Cependant, si la logique métier exige qu'un score nul soit retourné si *l'un* des scores est manquant (None),
+        # alors la vérification `if self.ndvi_anomaly_score is None or ...: return 0.0` serait plus appropriée.
+        # Pour l'instant, on suppose que les scores manquants (None) contribuent à 0 à la somme pondérée.
 
         return min(max(score, 0.0), 1.0)  # Clamp entre 0 et 1

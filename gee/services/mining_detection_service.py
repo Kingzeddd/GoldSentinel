@@ -13,6 +13,7 @@ from alert.models.financial_risk_model import FinancialRiskModel
 
 from gee.services.earth_engine_service import EarthEngineService
 from report.services.event_log_service import EventLogService
+from config.detection_settings import DetectionConfig # Import DetectionConfig
 
 
 class MiningDetectionService:
@@ -170,20 +171,14 @@ class MiningDetectionService:
                 print(f"Avertissement: Coordonnées du centre ou GEE asset ID manquants pour l'image {image_record.id}. Skipping TF prediction.")
 
 
-            # Seuils de détection (à calibrer selon vos données)
-            DETECTION_THRESHOLDS = {
-                'ndvi_threshold': 0.3,  # Chute significative végétation
-                'ndwi_threshold': 0.2,  # Changement eau/turbidité
-                'ndti_threshold': 0.4,  # Perturbation sol
-                'tf_threshold': 0.5,    # Seuil modèle TensorFlow
-            }
+            # Utilisation des seuils depuis DetectionConfig
+            anomaly_detected = (
+                anomaly_scores.get('ndvi_anomaly_score', 0) > DetectionConfig.SPECTRAL_NDVI_THRESHOLD or
+                anomaly_scores.get('ndwi_anomaly_score', 0) > DetectionConfig.SPECTRAL_NDWI_THRESHOLD or
+                anomaly_scores.get('ndti_anomaly_score', 0) > DetectionConfig.SPECTRAL_NDTI_THRESHOLD
+            )
 
-            # Vérification seuils dépassés (anomalies OU modèle TensorFlow)
-            anomaly_detected = (anomaly_scores.get('ndvi_anomaly_score', 0) > DETECTION_THRESHOLDS['ndvi_threshold'] or
-                               anomaly_scores.get('ndwi_anomaly_score', 0) > DETECTION_THRESHOLDS['ndwi_threshold'] or
-                               anomaly_scores.get('ndti_anomaly_score', 0) > DETECTION_THRESHOLDS['ndti_threshold'])
-
-            tf_detected = tf_confidence > DETECTION_THRESHOLDS['tf_threshold']
+            tf_detected = tf_confidence > DetectionConfig.TENSORFLOW_SCORE_THRESHOLD
 
             if anomaly_detected or tf_detected:
                 # Création détection
@@ -201,9 +196,12 @@ class MiningDetectionService:
                     validation_status='DETECTED'
                 )
 
-                # Calcul score confiance combiné (anomalies + TensorFlow)
-                anomaly_confidence = detection.calculate_confidence_score()
-                combined_confidence = (anomaly_confidence * 0.6) + (tf_confidence * 0.4)
+                # Calcul score confiance combiné (anomalies + TensorFlow) en utilisant DetectionConfig
+                anomaly_confidence = detection.calculate_confidence_score() # This is the anomaly-only score from the model
+                combined_confidence = (
+                    anomaly_confidence * DetectionConfig.COMBINED_CONFIDENCE_WEIGHT_ANOMALY +
+                    tf_confidence * DetectionConfig.COMBINED_CONFIDENCE_WEIGHT_TF
+                )
                 detection.confidence_score = min(max(combined_confidence, 0.0), 1.0)
                 detection.save()
 
@@ -239,15 +237,15 @@ class MiningDetectionService:
     def _generate_alert_and_risk(self, detection: DetectionModel):
         """Génère alerte, risque financier ET investigation automatiquement"""
         try:
-            # 1. Détermination type d'alerte selon score
-            if detection.confidence_score >= 0.8:
+            # 1. Détermination type d'alerte selon score en utilisant DetectionConfig
+            if detection.confidence_score >= DetectionConfig.ALERT_CRITICALITY_THRESHOLD_CRITICAL:
                 alert_type = 'CLANDESTINE_SITE'
                 criticality = 'CRITICAL'
-            elif detection.confidence_score >= 0.6:
+            elif detection.confidence_score >= DetectionConfig.ALERT_CRITICALITY_THRESHOLD_HIGH:
                 alert_type = 'SUSPICIOUS_ACTIVITY'
                 criticality = 'HIGH'
             else:
-                alert_type = 'SUSPICIOUS_ACTIVITY'
+                alert_type = 'SUSPICIOUS_ACTIVITY' # Default for scores below HIGH threshold
                 criticality = 'MEDIUM'
 
             # 2. Création alerte

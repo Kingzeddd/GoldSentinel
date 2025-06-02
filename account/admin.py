@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
-from .models import UserModel, AuthorityModel, UserAuthorityModel
+# Corrected imports:
+from .models.user_model import UserModel
+from .models.authority_model import AuthorityModel
+from .models.user_authority_model import UserAuthorityModel
 
 # Inline for UserAuthorityModel
 class UserAuthorityInline(admin.TabularInline):

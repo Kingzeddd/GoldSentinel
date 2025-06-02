@@ -237,9 +237,9 @@ class EarthEngineService:
             return {}
 
     def get_spectral_patch(self, point_coords: Tuple[float, float],
+                           image_asset_id: str, # Moved non-default argument before default ones
                            patch_size_pixels: int = 48,
-                           scale: int = 10,
-                           image_asset_id: str) -> Optional[List]:
+                           scale: int = 10) -> Optional[List]:
         """
         Extrait un patch de données spectrales (NDVI, NDWI, NDTI) pour un point donné.
 
