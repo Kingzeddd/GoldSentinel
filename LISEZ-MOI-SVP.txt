@@ -1,14 +1,204 @@
-CREER DES USER PAR DEFAUT 
+# GoldSentinel - Système de Détection d'Orpaillage par Satellite
+
+## Table des Matières
+1.  [But du Projet](#but-du-projet)
+2.  [Architecture Générale](#architecture-generale)
+3.  [Prérequis](#prerequis)
+4.  [Installation et Lancement](#installation-et-lancement)
+    *   [Backend (Django/Celery)](#backend-djangocelery)
+        *   [Avec Docker (Recommandé)](#avec-docker-recommandé)
+        *   [Manuellement](#manuellement)
+    *   [Frontend (React/Vite)](#frontend-reactvite)
+5.  [Utilisation des Fonctionnalités Frontend](#utilisation-des-fonctionnalites-frontend)
+    *   [Connexion](#connexion)
+    *   [Tableau de Bord](#tableau-de-bord)
+    *   [Gestion des Détections](#gestion-des-detections)
+    *   [Gestion des Investigations](#gestion-des-investigations)
+    *   [Gestion des Images Satellites](#gestion-des-images-satellites)
+    *   [Analyse Spectrale](#analyse-spectrale)
+    *   [Gestion des Alertes](#gestion-des-alertes)
+    *   [Gestion des Régions](#gestion-des-regions)
+    *   [Génération de Rapports](#generation-de-rapports)
+    *   [Statistiques Détaillées](#statistiques-detaillees)
+    *   [Gestion de Compte Utilisateur](#gestion-de-compte-utilisateur)
+    *   [Analyse de Risque Financier](#analyse-de-risque-financier)
+    *   [Journal des Événements](#journal-des-evenements)
+6.  [Commandes d'Administration Backend (Avancé)](#commandes-dadministration-backend-avance)
+    *   [Créer des Utilisateurs par Défaut](#creer-des-utilisateurs-par-defaut)
+    *   [Ingestion des Nouvelles Images Satellites (GEE)](#ingestion-des-nouvelles-images-satellites-gee)
+    *   [Services d'Arrière-plan (Celery)](#services-darriere-plan-celery)
+
+---
+
+## 1. But du Projet <a name="but-du-projet"></a>
+
+GoldSentinel est un système conçu pour la **détection et le suivi des activités d'orpaillage illégal** en utilisant l'imagerie satellite fournie par Google Earth Engine (GEE). Le système combine des techniques d'analyse spectrale avec des modèles d'intelligence artificielle (TensorFlow) pour identifier les sites miniers potentiels. Il offre une plateforme complète pour la gestion des détections, le lancement d'investigations, la visualisation de données géospatiales et la génération de rapports.
+
+L'objectif principal est de fournir aux autorités compétentes un outil technologique pour surveiller les zones étendues, identifier rapidement les nouvelles activités minières et orienter les interventions sur le terrain.
+
+---
+
+## 2. Architecture Générale <a name="architecture-generale"></a>
+
+Le système est composé de :
+*   Un **Backend** développé avec Django (Python), servant une API REST pour la logique métier, la gestion des données et l'intégration de l'IA. Il utilise PostgreSQL/PostGIS pour le stockage des données et Celery avec Redis pour la gestion des tâches asynchrones (traitement d'images, rapports, etc.).
+*   Un **Frontend** développé avec React (TypeScript) et Vite, offrant une interface utilisateur web interactive pour la visualisation des données, la gestion des alertes, des détections, etc.
+*   **Google Earth Engine (GEE)** comme source de données pour l'imagerie satellite.
+*   Un modèle **TensorFlow** pour l'analyse d'images et la détection.
+
+---
+
+## 3. Prérequis <a name="prerequis"></a>
+
+*   **Docker et Docker Compose:** Fortement recommandés pour faciliter le déploiement de l'environnement backend.
+*   **Node.js et npm:** Nécessaires pour le développement et le lancement du frontend.
+*   **Accès à Google Earth Engine:** Un compte de service Google Cloud avec les API GEE activées et les informations d'identification (`secrets/earthengine-credentials.json` ou `secrets/gee-service-account-key.json` - vérifiez le nom exact dans `docker-compose.yml` ou la configuration Django).
+*   **Navigateur Web Moderne:** Chrome, Firefox, Edge, etc.
+
+---
+
+## 4. Installation et Lancement <a name="installation-et-lancement"></a>
+
+### Backend (Django/Celery) <a name="backend-djangocelery"></a>
+
+#### Avec Docker (Recommandé) <a name="avec-docker-recommandé"></a>
+
+Cette méthode gère le backend, la base de données (PostgreSQL/PostGIS) et Redis (pour Celery).
+
+1.  **Clonez le dépôt** (si ce n'est pas déjà fait).
+2.  **Placez vos identifiants Google Earth Engine:** Assurez-vous que le fichier d'identifiants (par exemple, `secrets/earthengine-credentials.json`) est correctement placé et référencé dans `docker-compose.yml`.
+3.  **Lancez Docker Compose:**
+    ```bash
+    docker-compose up --build -d
+    ```
+    Le `-d` lance les services en arrière-plan. Utilisez `docker-compose logs -f` pour suivre les journaux.
+4.  Le backend Django sera accessible à `http://localhost:8000`.
+5.  Les migrations de base de données devraient s'appliquer automatiquement. Sinon, exécutez :
+    ```bash
+    docker-compose exec app python manage.py migrate
+    ```
+6.  Pour créer les utilisateurs par défaut et les données de démonstration (recommandé pour une première utilisation) :
+    ```bash
+    docker-compose exec app python manage.py create_default_users --demo
+    ```
+
+#### Manuellement <a name="manuellement"></a>
+
+Cette méthode est plus complexe et généralement utilisée pour le développement direct sur le backend.
+
+1.  **Installez les dépendances Python:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+2.  **Configurez et lancez PostgreSQL avec l'extension PostGIS.**
+3.  **Configurez et lancez Redis.**
+4.  **Configurez les variables d'environnement:**
+    Créez un fichier `.env` à la racine du projet ou exportez les variables nécessaires pour la base de données, Redis, les identifiants GEE, etc. (consultez `config/settings.py` et `docker-compose.yml` pour les variables attendues).
+5.  **Appliquez les migrations de la base de données:**
+    ```bash
+    python manage.py migrate
+    ```
+6.  **Lancez le serveur Django:**
+    ```bash
+    python manage.py runserver 0.0.0.0:8000
+    ```
+7.  **Lancez les services Celery** (voir la section [Services d'Arrière-plan](#services-darriere-plan-celery) plus bas).
+
+### Frontend (React/Vite) <a name="frontend-reactvite"></a>
+
+1.  **Naviguez vers le dossier frontend:**
+    ```bash
+    cd frontend
+    ```
+2.  **Installez les dépendances Node.js:**
+    ```bash
+    npm install
+    ```
+    (ou `yarn install` si vous utilisez Yarn)
+3.  **Lancez le serveur de développement Vite:**
+    ```bash
+    npm run dev
+    ```
+4.  Le frontend sera généralement accessible à `http://localhost:5173` (Vite indiquera l'URL exacte dans la console).
+5.  Assurez-vous que l'URL du backend vers laquelle le frontend fait des requêtes est correctement configurée (généralement dans `frontend/src/config/index.ts` ou via des variables d'environnement Vite `VITE_API_URL`). Par défaut, il devrait pointer vers `http://localhost:8000/api/v1`.
+
+---
+
+## 5. Utilisation des Fonctionnalités Frontend <a name="utilisation-des-fonctionnalites-frontend"></a>
+
+Une fois le backend et le frontend lancés, vous pouvez accéder à l'application via l'URL du frontend.
+
+### Connexion <a name="connexion"></a>
+*   **Page:** `/login`
+*   **Description:** Permet aux utilisateurs de se connecter avec leurs identifiants. Les utilisateurs par défaut sont créés via la commande `create_default_users` (voir section Administration Backend).
+
+### Tableau de Bord <a name="tableau-de-bord"></a>
+*   **Page:** `/` (ou `/dashboard`)
+*   **Description:** Page d'accueil après connexion. Affiche un résumé des informations clés, des statistiques et potentiellement des alertes récentes.
+
+### Gestion des Détections <a name="gestion-des-detections"></a>
+*   **Page:** `/detections`
+*   **Description:** Affiche la liste des détections d'orpaillage. Permet de visualiser les détails de chaque détection (localisation, date, score de confiance, image satellite associée). Les utilisateurs peuvent potentiellement filtrer, trier les détections et fournir un feedback sur leur validité.
+
+### Gestion des Investigations <a name="gestion-des-investigations"></a>
+*   **Page:** `/investigations`
+*   **Description:** Permet de suivre les investigations lancées suite à des détections. Les utilisateurs peuvent voir les investigations en cours, assignées, et leur statut. Il peut être possible de créer de nouvelles investigations ou de mettre à jour celles existantes.
+
+### Gestion des Images Satellites <a name="gestion-des-images-satellites"></a>
+*   **Page:** `/images`
+*   **Description:** Catalogue des images satellites ingérées par le système. Permet de visualiser les images, leurs métadonnées (date, région, source GEE) et potentiellement de lancer des analyses.
+
+### Analyse Spectrale <a name="analyse-spectrale"></a>
+*   **Page:** `/spectral` ou via un lien depuis une détection/image.
+*   **Description:** Fournit des outils de visualisation et d'analyse des indices spectraux (NDVI, NDWI, NDTI).
+    *   **Cartes Spectrales (`SpectralMap`):** Affiche les indices sous forme de couches cartographiques interactives, superposées à une carte de base (OpenStreetMap). Permet de naviguer, zoomer et inspecter visuellement les zones.
+    *   **Graphiques Spectraux (`SpectralCharts`):** Affiche les valeurs des indices sous forme de graphiques (barres pour les valeurs actuelles, courbes pour l'évolution temporelle sur une région). Aide à interpréter l'état de la végétation, de l'eau et du sol.
+
+### Gestion des Alertes <a name="gestion-des-alertes"></a>
+*   **Page:** `/alerts`
+*   **Description:** Liste les alertes générées par le système (par exemple, nouvelles détections à haut risque, anomalies financières). Permet aux utilisateurs de consulter les détails des alertes et de les marquer comme traitées.
+
+### Gestion des Régions <a name="gestion-des-regions"></a>
+*   **Page:** `/regions`
+*   **Description:** Permet de définir et de gérer les régions géographiques d'intérêt pour la surveillance. Les analyses et détections sont souvent associées à ces régions.
+
+### Génération de Rapports <a name="generation-de-rapports"></a>
+*   **Page:** `/reports`
+*   **Description:** Permet de générer des rapports (par exemple, au format CSV) sur les détections, investigations ou autres données du système, potentiellement sur des périodes ou régions spécifiques.
+
+### Statistiques Détaillées <a name="statistiques-detaillees"></a>
+*   **Page:** `/stats`
+*   **Description:** Fournit une vue plus approfondie des statistiques du système, avec des graphiques et des chiffres sur les tendances des détections, l'efficacité des investigations, etc.
+
+### Gestion de Compte Utilisateur <a name="gestion-de-compte-utilisateur"></a>
+*   **Page:** `/account` (ou `/profile`)
+*   **Description:** Permet à l'utilisateur de gérer les informations de son profil, comme le changement de mot de passe.
+
+### Analyse de Risque Financier <a name="analyse-de-risque-financier"></a>
+*   **Intégrée potentiellement dans les pages Détections ou Alertes.**
+*   **Description:** Le système peut inclure des fonctionnalités pour évaluer ou afficher le risque financier associé aux activités d'orpaillage détectées. Les détails de cette fonctionnalité seraient visibles via les services (`financial-risk.service.ts`) et les API correspondantes.
+
+### Journal des Événements <a name="journal-des-evenements"></a>
+*   **Potentiellement une section dédiée ou intégrée.**
+*   **Description:** Affiche un journal des actions importantes des utilisateurs ou des événements système, utile pour l'audit et le suivi.
+
+---
+
+## 6. Commandes d'Administration Backend (Avancé) <a name="commandes-dadministration-backend-avance"></a>
+
+Ces commandes sont à exécuter via `python manage.py ...` (en local) ou `docker-compose exec app python manage.py ...` (avec Docker).
+
+### Créer des Utilisateurs par Défaut <a name="creer-des-utilisateurs-par-defaut"></a>
 
 1- Création simple des utilisateurs par défaut :
-   python manage.py create_default_users
+   `python manage.py create_default_users`
 
    Résultat : Crée les utilisateurs par défaut (Responsable, Agent de Terrain, etc.) et leurs autorités associées si non existants.
 
 ##########################################
 
 2- Forcer la recréation des utilisateurs (Réinitialisation) :
-   python manage.py create_default_users --force
+   `python manage.py create_default_users --force`
 
    Résultat :
    🗑️ Supprime les utilisateurs non-superutilisateurs existants, leurs autorités, et les données de démonstration associées (investigations, détections, images de démo).
@@ -18,7 +208,7 @@ CREER DES USER PAR DEFAUT
 ############################################
 
 3- Créer utilisateurs et données de démonstration :
-   python manage.py create_default_users --demo
+   `python manage.py create_default_users --demo`
 
    Résultat :
    ✅ Crée ou met à jour les utilisateurs et autorités par défaut.
@@ -28,17 +218,21 @@ CREER DES USER PAR DEFAUT
    🔍 Crée une investigation d'exemple, assignée à un agent de terrain.
    💡 Idéal pour une démonstration complète du flux de travail du système !
 
+### Ingestion des Nouvelles Images Satellites (GEE) <a name="ingestion-des-nouvelles-images-satellites-gee"></a>
+
 ############################################
 INGESTION DES NOUVELLES IMAGES SATELLITES
 ############################################
 
 4- Scanner et traiter les nouvelles images GEE :
-   python manage.py ingest_new_gee_images
+   `python manage.py ingest_new_gee_images`
 
    Résultat :
    🛰️ Interroge Google Earth Engine pour les images satellites récentes.
    ➕ Identifie les nouvelles images non encore traitées et les ajoute à la file d'attente pour traitement asynchrone (calcul des indices spectraux, etc.).
    💡 Cette commande doit être exécutée périodiquement (par exemple, via une tâche cron système ou manuellement de temps en temps) pour que le système reste à jour avec les dernières images disponibles.
+
+### Services d'Arrière-plan (Celery) <a name="services-darriere-plan-celery"></a>
 
 ############################################
 IMPORTANT : SERVICES D'ARRIÈRE-PLAN (CELERY)
@@ -50,14 +244,16 @@ Avant de lancer ces services, assurez-vous que votre broker de messages (par exe
 
 1. **Celery Worker (Exécuteur de Tâches)**:
    Ce service exécute les tâches longues ou gourmandes en ressources en arrière-plan, telles que le traitement des images GEE, la génération de rapports, etc.
-   Pour le démarrer (depuis la racine du projet) :
+   Pour le démarrer (depuis la racine du projet, si exécution manuelle) :
    `celery -A config worker -l info`
+   (Avec Docker, ce service est géré par `docker-compose.yml` sous le nom `worker`)
 
 2. **Celery Beat (Planificateur de Tâches)**:
    Ce service est responsable du lancement des tâches périodiques, comme la mise à jour quotidienne des statistiques du tableau de bord.
-   Pour le démarrer (depuis la racine du projet) :
+   Pour le démarrer (depuis la racine du projet, si exécution manuelle) :
    `celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler`
+   (Avec Docker, ce service n'est pas explicitement défini dans le `docker-compose.yml` fourni. Si des tâches planifiées persistantes sont nécessaires (ex: via `django-celery-beat`), ce service devra être lancé. Cela peut être fait en ajoutant un nouveau service à `docker-compose.yml` ou en l'exécutant manuellement dans le conteneur `app` ou `worker`.)
 
-   *(Note : L'utilisation de `django_celery_beat.schedulers:DatabaseScheduler` est recommandée si vous utilisez `django-celery-beat` pour stocker les planifications en base de données. Si vous avez une configuration de beat différente, ajustez la commande en conséquence.)*
+   *(Note : L'utilisation de `django_celery_beat.schedulers:DatabaseScheduler` est recommandée si vous utilisez `django-celery-beat` pour stocker les planifications en base de données.)*
 
 Le bon fonctionnement de ces deux services est crucial pour que toutes les fonctionnalités du système GoldSentinel soient disponibles et performantes.
